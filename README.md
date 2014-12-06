@@ -1,10 +1,46 @@
-Autoform Map
-===================
+Autoform map
+============
 
-Custom input type for Meteor Autoform Package
+Edit location coordinates with autoForm.
 
-1. Click on map
-2. Search for location
-3. Geolocation asks for users location (optional in schema)
+###Setup###
+1) Install `meteor add yogiben:autoform-map`
 
-Saved as a `lat,lon` comma separated value
+2) Define your schema and set the `autoform` property like in the example below
+```
+Schemas = {}
+
+@Cities = new Meteor.Collection('cities');
+
+Schemas.Cities = new SimpleSchema
+	name:
+		type:String
+		max: 60
+		
+	location:
+		type: String
+		autoform:
+			afFieldInput:
+				type: 'map'
+
+Cities.attachSchema(Schemas.Cities)
+```
+
+3) Generate the form with `{{> quickform}}` or `{{#autoform}}`
+
+e.g.
+```
+{{> quickForm collection="Cities" type="insert"}}
+```
+
+or
+
+```
+{{#autoForm collection="Cities" type="insert"}}
+    {{> afQuickField name="name"}}
+    {{> afQuickField name="location"}}
+    <button type="submit" class="btn btn-primary">Insert</button>
+{{/autoForm}}
+```
+
+Coordinates will be saved as string in format `latititude,longitude`.

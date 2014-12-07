@@ -2,6 +2,7 @@ defaults =
 	mapType: 'roadmap',
 	defaultLat: -34.397
 	defaultLng: 150.644
+	geolocation: false
 
 AutoForm.addInputType 'map',
 	template: 'afMap'
@@ -12,7 +13,7 @@ AutoForm.addInputType 'map',
 		ctx
 
 Template.afMap.rendered = ->
-	options = _.extend {}, defaults
+	@data.options = _.extend {}, defaults, @data.atts
 
 	@data.marker = undefined
 	@data.setMarker = (map, location) =>
@@ -27,7 +28,7 @@ Template.afMap.rendered = ->
 	GoogleMaps.init {}, () =>
 		mapOptions =
 			zoom: 13
-			mapTypeId: google.maps.MapTypeId[options.mapType]
+			mapTypeId: google.maps.MapTypeId[@data.options.mapType]
 		
 		@data.map = new google.maps.Map @find('.js-map'), mapOptions
 
@@ -37,7 +38,7 @@ Template.afMap.rendered = ->
 			@data.setMarker @data.map, location
 			@data.map.setCenter location
 		else
-			@data.map.setCenter new google.maps.LatLng options.defaultLat, options.defaultLng
+			@data.map.setCenter new google.maps.LatLng @data.options.defaultLat, @data.options.defaultLng
 
 		google.maps.event.addListener @data.map, 'click', (e) =>
 			@data.setMarker @data.map, e.latLng

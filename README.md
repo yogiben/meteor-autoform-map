@@ -52,3 +52,5 @@ Coordinates will be saved as string in format `latititude,longitude`.
 
 *defaultLat* default latitude
 *defaultLng* default longitude
+
+*geolocation* enables or disables geolocation feature. Defaults to `false`

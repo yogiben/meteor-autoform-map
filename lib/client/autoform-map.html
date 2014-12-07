@@ -2,7 +2,9 @@
 	<div data-schema-key="{{schemaKey}}">
 		<input type="text" class="js-lat" style="display: none">
 		<input type="text" class="js-lng" style="display: none">
+		{{#if atts.geolocation}}
 		<button class="btn btn-default js-locate"><i class="fa fa-compass"></i></button>
+		{{/if}}
 		<div class="js-map" style="width:{{width}}; height:{{height}};"></div>
 	</div>
 </template>

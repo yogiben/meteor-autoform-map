@@ -1,5 +1,7 @@
 defaults =
-	mapType: 'roadmap'
+	mapType: 'roadmap',
+	defaultLat: -34.397
+	defaultLng: 150.644
 
 AutoForm.addInputType 'map',
 	template: 'afMap'
@@ -21,7 +23,6 @@ Template.afMap.rendered = ->
 		@data.marker = new google.maps.Marker
 			position: location
 			map: map
-		@data.map.setCenter location
 
 	GoogleMaps.init {}, () =>
 		mapOptions =
@@ -34,9 +35,9 @@ Template.afMap.rendered = ->
 			location = @data.value.split ','
 			location = new google.maps.LatLng parseFloat(location[0]), parseFloat(location[1])
 			@data.setMarker @data.map, location
+			@data.map.setCenter location
 		else
-			# TODO: handle default lat/lng
-			@data.map.setCenter new google.maps.LatLng -34.397, 150.644
+			@data.map.setCenter new google.maps.LatLng options.defaultLat, options.defaultLng
 
 		google.maps.event.addListener @data.map, 'click', (e) =>
 			@data.setMarker @data.map, e.latLng

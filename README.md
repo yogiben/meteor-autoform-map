@@ -49,3 +49,6 @@ Coordinates will be saved as string in format `latititude,longitude`.
 ###Options###
 
 *mapType* type of google map. Possible values: `'roadmap' 'satellite' 'hybrid' 'terrain'`
+
+*defaultLat* default latitude
+*defaultLng* default longitude

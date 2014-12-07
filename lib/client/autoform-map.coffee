@@ -9,7 +9,10 @@ AutoForm.addInputType 'map',
 	template: 'afMap'
 	valueOut: ->
 		node = $(@context)
-		node.find('.js-lat').val() + ',' + node.find('.js-lng').val()
+		lat = node.find('.js-lat').val()
+		lng = node.find('.js-lng').val()
+		if lat.length > 0 and lng.length > 0
+			return "#{lat},#{lng}"
 	contextAdjust: (ctx) ->
 		ctx
 

@@ -1,8 +1,9 @@
 defaults =
-	mapType: 'roadmap',
+	mapType: 'roadmap'
 	defaultLat: -34.397
 	defaultLng: 150.644
 	geolocation: false
+	zoom: 13
 
 AutoForm.addInputType 'map',
 	template: 'afMap'
@@ -27,7 +28,7 @@ Template.afMap.rendered = ->
 
 	GoogleMaps.init {}, () =>
 		mapOptions =
-			zoom: 13
+			zoom: @data.options.zoom
 			mapTypeId: google.maps.MapTypeId[@data.options.mapType]
 			streetViewControl: false
 		

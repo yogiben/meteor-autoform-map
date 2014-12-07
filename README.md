@@ -54,3 +54,5 @@ Coordinates will be saved as string in format `latititude,longitude`.
 *defaultLng* default longitude
 
 *geolocation* enables or disables geolocation feature. Defaults to `false`
+
+*zoom* zoom of the map. Defaults to `13`

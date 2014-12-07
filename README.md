@@ -50,6 +50,8 @@ Coordinates will be saved as string in format `latititude,longitude`.
 
 *mapType* type of google map. Possible values: `'roadmap' 'satellite' 'hybrid' 'terrain'`
 
+*width* *height* valid css values for width and height attributes of map. Default width is set to `'100%'` and height is `'200px'`
+
 *defaultLat* default latitude
 *defaultLng* default longitude
 

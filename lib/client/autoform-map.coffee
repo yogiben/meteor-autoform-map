@@ -57,7 +57,7 @@ Template.afMap.helpers
 		else if typeof @atts.width == 'number'
 			@atts.width + 'px'
 		else
-			'200px'
+			'100%'
 	height: ->
 		if typeof @atts.height == 'string'
 			@atts.height

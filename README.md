@@ -22,6 +22,7 @@ Schemas.Cities = new SimpleSchema
 		autoform:
 			afFieldInput:
 				type: 'map'
+				# options
 
 Cities.attachSchema(Schemas.Cities)
 ```
@@ -44,3 +45,7 @@ or
 ```
 
 Coordinates will be saved as string in format `latititude,longitude`.
+
+###Options###
+
+*mapType* type of google map. Possible values: `'roadmap' 'satellite' 'hybrid' 'terrain'`

@@ -1,3 +1,6 @@
+defaults =
+	mapType: 'roadmap'
+
 AutoForm.addInputType 'map',
 	template: 'afMap'
 	valueOut: ->
@@ -7,6 +10,8 @@ AutoForm.addInputType 'map',
 		ctx
 
 Template.afMap.rendered = ->
+	options = _.extend {}, defaults
+
 	@data.marker = undefined
 	@data.setMarker = (map, location) =>
 		@$('.js-lat').val(location.lat())
@@ -16,18 +21,18 @@ Template.afMap.rendered = ->
 		@data.marker = new google.maps.Marker
 			position: location
 			map: map
+		@data.map.setCenter location
 
 	GoogleMaps.init {}, () =>
 		mapOptions =
 			zoom: 13
-			mapTypeId: google.maps.MapTypeId.SATELLITE
+			mapTypeId: google.maps.MapTypeId[options.mapType]
 		
 		@data.map = new google.maps.Map @find('.js-map'), mapOptions
 
 		if @data.value
 			location = @data.value.split ','
 			location = new google.maps.LatLng parseFloat(location[0]), parseFloat(location[1])
-			@data.map.setCenter location
 			@data.setMarker @data.map, location
 		else
 			# TODO: handle default lat/lng

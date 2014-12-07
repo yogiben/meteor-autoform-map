@@ -29,6 +29,7 @@ Template.afMap.rendered = ->
 		mapOptions =
 			zoom: 13
 			mapTypeId: google.maps.MapTypeId[@data.options.mapType]
+			streetViewControl: false
 		
 		@data.map = new google.maps.Map @find('.js-map'), mapOptions
 

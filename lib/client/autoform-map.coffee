@@ -1,7 +1,7 @@
 defaults =
 	mapType: 'roadmap'
-	defaultLat: -34.397
-	defaultLng: 150.644
+	defaultLat: 1
+	defaultLng: 1
 	geolocation: false
 	zoom: 13
 
@@ -30,7 +30,7 @@ Template.afMap.rendered = ->
 	@data.options = _.extend {}, defaults, @data.atts
 
 	@data.marker = undefined
-	@data.setMarker = (map, location) =>
+	@data.setMarker = (map, location, zoom=0) =>
 		@$('.js-lat').val(location.lat())
 		@$('.js-lng').val(location.lng())
 
@@ -39,18 +39,22 @@ Template.afMap.rendered = ->
 			position: location
 			map: map
 
+		if zoom > 0
+			@data.map.setZoom zoom
+
 	GoogleMaps.init {}, () =>
 		mapOptions =
-			zoom: @data.options.zoom
+			zoom: 0
 			mapTypeId: google.maps.MapTypeId[@data.options.mapType]
 			streetViewControl: false
 		
 		@data.map = new google.maps.Map @find('.js-map'), mapOptions
 
 		if @data.value
+			console.log 'value'
 			location = @data.value.split ','
 			location = new google.maps.LatLng parseFloat(location[0]), parseFloat(location[1])
-			@data.setMarker @data.map, location
+			@data.setMarker @data.map, location, @data.options.zoom
 			@data.map.setCenter location
 		else
 			@data.map.setCenter new google.maps.LatLng @data.options.defaultLat, @data.options.defaultLng
@@ -85,6 +89,6 @@ Template.afMap.events
 		@setLoading true
 		navigator.geolocation?.getCurrentPosition (position) =>
 			location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
-			@setMarker @map, location
+			@setMarker @map, location, @options.zoom
 			@map.setCenter location
 			@setLoading false

@@ -14,17 +14,15 @@ AutoForm.addInputType 'map',
 		if lat.length > 0 and lng.length > 0
 			return "#{lat},#{lng}"
 	contextAdjust: (ctx) ->
+		ctx.loading = new Tracker.Dependency
+		ctx._loading = false
+		ctx.isLoading = =>
+			ctx.loading.depend()
+			ctx._loading
+		ctx.setLoading = (state) =>
+			ctx._loading = state
+			ctx.loading.changed()
 		ctx
-
-Template.afMap.created = ->
-	@data.loading = new Tracker.Dependency
-	@data._loading = false
-	@data.isLoading = =>
-		@data.loading.depend()
-		@data._loading
-	@data.setLoading = (state) =>
-		@data._loading = state
-		@data.loading.changed()
 
 Template.afMap.rendered = ->
 	@data.options = _.extend {}, defaults, @data.atts

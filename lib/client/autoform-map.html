@@ -3,7 +3,9 @@
 		<input type="text" class="js-lat" style="display: none">
 		<input type="text" class="js-lng" style="display: none">
 		{{#if atts.geolocation}}
-		<a style="margin-bottom:5px;" class="btn btn-default js-locate"><i class="fa fa-map-marker"></i> My location</a>
+		<a style="margin-bottom:5px;" class="btn btn-default js-locate">
+			<i class="fa {{#if loading}}fa-spin fa-circle-o-notch{{else}}fa-map-marker{{/if}}"></i> My location
+		</a>
 		{{/if}}
 		<div class="js-map" style="width:{{width}}; height:{{height}};"></div>
 	</div>

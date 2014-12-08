@@ -58,3 +58,14 @@ Coordinates will be saved as string in format `latititude,longitude`.
 *geolocation* enables or disables geolocation feature. Defaults to `false`
 
 *zoom* zoom of the map. Defaults to `13`
+
+```
+	location:
+		type: String
+		autoform:
+			afFieldInput:
+				type: 'map'
+				mapType: 'terrain'
+				zoom: 8
+				geolocation: true
+```

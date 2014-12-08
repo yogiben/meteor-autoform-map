@@ -3,6 +3,7 @@ defaults =
 	defaultLat: 1
 	defaultLng: 1
 	geolocation: false
+	searchBox: false
 	zoom: 13
 
 AutoForm.addInputType 'map',
@@ -40,7 +41,7 @@ Template.afMap.rendered = ->
 		if zoom > 0
 			@data.map.setZoom zoom
 
-	GoogleMaps.init {}, () =>
+	GoogleMaps.init { libraries: 'places' }, () =>
 		mapOptions =
 			zoom: 0
 			mapTypeId: google.maps.MapTypeId[@data.options.mapType]
@@ -55,6 +56,19 @@ Template.afMap.rendered = ->
 			@data.map.setCenter location
 		else
 			@data.map.setCenter new google.maps.LatLng @data.options.defaultLat, @data.options.defaultLng
+
+		if @data.atts.searchBox
+			input = @find('.js-search')
+
+			@data.map.controls[google.maps.ControlPosition.TOP_LEFT].push input
+			searchBox = new google.maps.places.SearchBox input
+
+			google.maps.event.addListener searchBox, 'places_changed', =>
+				location = searchBox.getPlaces()[0].geometry.location
+				@data.setMarker @data.map, location
+				@data.map.setCenter location
+
+			$(input).removeClass('af-map-search-box-hidden')
 
 		google.maps.event.addListener @data.map, 'click', (e) =>
 			@data.setMarker @data.map, e.latLng

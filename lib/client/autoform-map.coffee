@@ -49,7 +49,6 @@ Template.afMap.rendered = ->
 		@data.map = new google.maps.Map @find('.js-map'), mapOptions
 
 		if @data.value
-			console.log 'value'
 			location = @data.value.split ','
 			location = new google.maps.LatLng parseFloat(location[0]), parseFloat(location[1])
 			@data.setMarker @data.map, location, @data.options.zoom
@@ -84,8 +83,10 @@ Template.afMap.events
 	'click .js-locate': (e, t) ->
 		e.preventDefault()
 
+		unless navigator.geolocation then return false
+
 		@setLoading true
-		navigator.geolocation?.getCurrentPosition (position) =>
+		navigator.geolocation.getCurrentPosition (position) =>
 			location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
 			@setMarker @map, location, @options.zoom
 			@map.setCenter location

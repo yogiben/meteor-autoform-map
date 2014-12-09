@@ -61,6 +61,8 @@ Coordinates will be saved as string in format `latititude,longitude`.
 
 *zoom* zoom of the map. Defaults to `13`
 
+*autolocate* if set to `true` will automatically ask for user's location. Defaults to `false`
+
 ```
 	location:
 		type: String

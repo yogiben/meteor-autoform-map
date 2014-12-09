@@ -4,6 +4,7 @@ defaults =
 	defaultLng: 1
 	geolocation: false
 	searchBox: false
+	autolocate: false
 	zoom: 13
 
 AutoForm.addInputType 'map',
@@ -69,6 +70,12 @@ Template.afMap.rendered = ->
 				@data.map.setCenter location
 
 			$(input).removeClass('af-map-search-box-hidden')
+
+		if @data.atts.autolocate and navigator.geolocation and not @data.value
+			navigator.geolocation.getCurrentPosition (position) =>
+				location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
+				@data.setMarker @data.map, location, @options.zoom
+				@data.map.setCenter location
 
 		google.maps.event.addListener @data.map, 'click', (e) =>
 			@data.setMarker @data.map, e.latLng

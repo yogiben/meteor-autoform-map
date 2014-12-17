@@ -16,14 +16,7 @@ AutoForm.addInputType 'map',
 		if lat.length > 0 and lng.length > 0
 			return "#{lat},#{lng}"
 	contextAdjust: (ctx) ->
-		ctx.loading = new Tracker.Dependency
-		ctx._loading = false
-		ctx.isLoading = =>
-			ctx.loading.depend()
-			ctx._loading
-		ctx.setLoading = (state) =>
-			ctx._loading = state
-			ctx.loading.changed()
+		ctx.loading = new ReactiveVar(false)
 		ctx
 
 Template.afMap.rendered = ->
@@ -98,7 +91,7 @@ Template.afMap.helpers
 		else
 			'200px'
 	loading: ->
-		@isLoading()
+		@loading.get()
 
 Template.afMap.events
 	'click .js-locate': (e, t) ->
@@ -106,9 +99,9 @@ Template.afMap.events
 
 		unless navigator.geolocation then return false
 
-		@setLoading true
+		@loading.set true
 		navigator.geolocation.getCurrentPosition (position) =>
 			location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
 			@setMarker @map, location, @options.zoom
 			@map.setCenter location
-			@setLoading false
+			@loading.set false

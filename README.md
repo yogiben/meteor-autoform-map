@@ -20,8 +20,8 @@ Schemas.Cities = new SimpleSchema
 	location:
 		type: String
 		autoform:
+			type: 'map'
 			afFieldInput:
-				type: 'map'
 				# options
 
 Cities.attachSchema(Schemas.Cities)
@@ -44,7 +44,21 @@ or
 {{/autoForm}}
 ```
 
-Coordinates will be saved as string in format `latititude,longitude`.
+Coordinates will be saved as string in format `latititude,longitude`. Alternatively it can be an object. See schema below:
+
+```
+Schemas.Cities = new SimpleSchema
+	location:
+		type: String
+		autoform:
+			type: 'map'
+			afFieldInput:
+				# options
+	'location.lat':
+		type: String
+	'location.lng':
+		type: String
+```
 
 ###Options###
 

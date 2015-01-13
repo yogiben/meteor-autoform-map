@@ -75,6 +75,11 @@ Template.afMap.rendered = ->
 		google.maps.event.addListener @data.map, 'click', (e) =>
 			@data.setMarker @data.map, e.latLng
 
+	@$('.js-map').closest('form').on 'reset', =>
+		@data.marker.setMap null
+		@data.map.setCenter new google.maps.LatLng @data.options.defaultLat, @data.options.defaultLng
+		@data.map.setZoom 0
+
 Template.afMap.helpers
 	schemaKey: ->
 		@atts['data-schema-key']

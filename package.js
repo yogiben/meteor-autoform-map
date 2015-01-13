@@ -12,7 +12,7 @@ Package.onUse(function(api) {
   	'coffeescript',
   	'templating',
     'reactive-var',
-  	'aldeed:autoform@4.0.7',
+  	'aldeed:autoform@4.2.2',
   	'mrt:googlemaps@0.0.2'
   ], 'client');
 

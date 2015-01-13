@@ -11,13 +11,15 @@ AutoForm.addInputType 'map',
 	template: 'afMap'
 	valueOut: ->
 		node = $(@context)
-		lat = node.find('.js-lat').val()
-		lng = node.find('.js-lng').val()
-		if lat.length > 0 and lng.length > 0
-			return "#{lat},#{lng}"
+		
+		lat: node.find('.js-lat').val()
+		lng: node.find('.js-lng').val()
 	contextAdjust: (ctx) ->
 		ctx.loading = new ReactiveVar(false)
 		ctx
+	valueConverters:
+		string: (value) ->
+			"#{value.lat},#{value.lng}"
 
 Template.afMap.rendered = ->
 	@data.options = _.extend {}, defaults, @data.atts
@@ -44,7 +46,7 @@ Template.afMap.rendered = ->
 		@data.map = new google.maps.Map @find('.js-map'), mapOptions
 
 		if @data.value
-			location = @data.value.split ','
+			location = if typeof @data.value == 'string' then @data.value.split ',' else [@data.value.lat, @data.value.lng]
 			location = new google.maps.LatLng parseFloat(location[0]), parseFloat(location[1])
 			@data.setMarker @data.map, location, @data.options.zoom
 			@data.map.setCenter location

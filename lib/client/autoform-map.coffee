@@ -69,7 +69,7 @@ Template.afMap.rendered = ->
 		if @data.atts.autolocate and navigator.geolocation and not @data.value
 			navigator.geolocation.getCurrentPosition (position) =>
 				location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
-				@data.setMarker @data.map, location, @options.zoom
+				@data.setMarker @data.map, location, @data.options.zoom
 				@data.map.setCenter location
 
 		google.maps.event.addListener @data.map, 'click', (e) =>

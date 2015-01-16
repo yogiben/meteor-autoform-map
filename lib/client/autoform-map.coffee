@@ -42,7 +42,10 @@ Template.afMap.rendered = ->
 			zoom: 0
 			mapTypeId: google.maps.MapTypeId[@data.options.mapType]
 			streetViewControl: false
-		
+
+		if @data.atts.googleMap
+			_.extend mapOptions, @data.atts.googleMap
+
 		@data.map = new google.maps.Map @find('.js-map'), mapOptions
 
 		if @data.value
@@ -71,6 +74,9 @@ Template.afMap.rendered = ->
 				location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
 				@data.setMarker @data.map, location, @data.options.zoom
 				@data.map.setCenter location
+
+		if typeof @data.atts.rendered == 'function'
+			@data.atts.rendered @data.map
 
 		google.maps.event.addListener @data.map, 'click', (e) =>
 			@data.setMarker @data.map, e.latLng

@@ -77,6 +77,10 @@ Schemas.Cities = new SimpleSchema
 
 *autolocate* if set to `true` will automatically ask for user's location. Defaults to `false`
 
+*googleMap* google maps specific [options](https://developers.google.com/maps/documentation/javascript/reference#MapOptions).
+
+*rendered* function called when map is rendered. [google.maps.Map](https://developers.google.com/maps/documentation/javascript/reference#Map) will be passed as an argument.
+
 ```
 	location:
 		type: String

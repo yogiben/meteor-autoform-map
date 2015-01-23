@@ -22,7 +22,10 @@ Schemas.Cities = new SimpleSchema
 		autoform:
 			type: 'map'
 			afFieldInput:
-				# options
+				type: 'map'
+      				geolocation: true
+      				searchBox: true
+      				autolocate: true
 
 Cities.attachSchema(Schemas.Cities)
 ```

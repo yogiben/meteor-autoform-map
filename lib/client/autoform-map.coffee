@@ -1,3 +1,5 @@
+KEY_ENTER = 13
+
 defaults =
 	mapType: 'roadmap'
 	defaultLat: 1
@@ -118,3 +120,6 @@ Template.afMap.events
 			@setMarker @map, location, @options.zoom
 			@map.setCenter location
 			@loading.set false
+
+	'keydown .js-search': (e) ->
+		if e.keyCode == KEY_ENTER then e.preventDefault()

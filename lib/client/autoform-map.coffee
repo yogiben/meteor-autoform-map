@@ -21,7 +21,10 @@ AutoForm.addInputType 'map',
 		ctx
 	valueConverters:
 		string: (value) ->
-			"#{value.lat},#{value.lng}"
+			if @attr('reverse')
+				"#{value.lng},#{value.lat}"
+			else
+				"#{value.lat},#{value.lng}"
 
 Template.afMap.rendered = ->
 	@data.options = _.extend {}, defaults, @data.atts

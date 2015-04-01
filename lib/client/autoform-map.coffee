@@ -14,8 +14,12 @@ AutoForm.addInputType 'map',
 	valueOut: ->
 		node = $(@context)
 		
-		lat: node.find('.js-lat').val()
-		lng: node.find('.js-lng').val()
+		lat = node.find('.js-lat').val()
+		lng = node.find('.js-lng').val()
+
+		if lat.length > 0 and lng.length > 0
+			lat: lat
+			lng: lng
 	contextAdjust: (ctx) ->
 		ctx.loading = new ReactiveVar(false)
 		ctx
@@ -87,7 +91,7 @@ Template.afMap.rendered = ->
 			@data.setMarker @data.map, e.latLng
 
 	@$('.js-map').closest('form').on 'reset', =>
-		@data.marker.setMap null
+		@data.marker and @data.marker.setMap null
 		@data.map.setCenter new google.maps.LatLng @data.options.defaultLat, @data.options.defaultLng
 		@data.map.setZoom 0
 

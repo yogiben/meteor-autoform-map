@@ -3,7 +3,7 @@ Autoform map
 
 Edit location coordinates with autoForm.
 
-###Setup###
+### Setup ###
 1) Install `meteor add yogiben:autoform-map`
 
 2) Define your schema and set the `autoform` property like in the example below
@@ -63,7 +63,7 @@ Schemas.Cities = new SimpleSchema
 		type: String
 ```
 
-###Options###
+### Options ###
 
 *mapType* type of google map. Possible values: `'roadmap' 'satellite' 'hybrid' 'terrain'`
 

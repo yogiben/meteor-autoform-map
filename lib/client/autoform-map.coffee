@@ -64,6 +64,7 @@ Template.afMap.rendered = ->
 			@data.map.setCenter location
 		else
 			@data.map.setCenter new google.maps.LatLng @data.options.defaultLat, @data.options.defaultLng
+			@data.map.setZoom @data.options.zoom
 
 		if @data.atts.searchBox
 			input = @find('.js-search')

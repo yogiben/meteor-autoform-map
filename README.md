@@ -51,7 +51,7 @@ Coordinates will be saved as string in format `latititude,longitude`. Alternativ
 ```
 Schemas.Cities = new SimpleSchema
 	location:
-		type: String
+		type: Object
 		autoform:
 			type: 'map'
 			afFieldInput:
@@ -60,6 +60,24 @@ Schemas.Cities = new SimpleSchema
 		type: String
 	'location.lng':
 		type: String
+```
+
+Or if you want to save lat and lng as a number:
+
+```
+Schemas.Cities = new SimpleSchema
+	location:
+		type: Object
+		autoform:
+			type: 'map'
+			afFieldInput:
+				# options
+	'location.lat':
+		type: Number
+		decimal: true
+	'location.lng':
+		type: Number
+		decimal: true
 ```
 
 ### Options ###

@@ -30,7 +30,10 @@ AutoForm.addInputType 'map',
 			else
 				"#{value.lat},#{value.lng}"
 
-Template.afMap.rendered = ->
+Template.afMap.created = ->
+	GoogleMaps.load(libraries: 'places')
+
+initTemplateAndGoogleMaps = ->
 	@data.options = _.extend {}, defaults, @data.atts
 
 	@data.marker = undefined
@@ -46,55 +49,58 @@ Template.afMap.rendered = ->
 		if zoom > 0
 			@data.map.setZoom zoom
 
-	GoogleMaps.init { libraries: 'places' }, () =>
-		mapOptions =
-			zoom: 0
-			mapTypeId: google.maps.MapTypeId[@data.options.mapType]
-			streetViewControl: false
+	mapOptions =
+		zoom: 0
+		mapTypeId: google.maps.MapTypeId[@data.options.mapType]
+		streetViewControl: false
 
-		if @data.atts.googleMap
-			_.extend mapOptions, @data.atts.googleMap
+	if @data.atts.googleMap
+		_.extend mapOptions, @data.atts.googleMap
 
-		@data.map = new google.maps.Map @find('.js-map'), mapOptions
+	@data.map = new google.maps.Map @find('.js-map'), mapOptions
 
-		if @data.value
-			location = if typeof @data.value == 'string' then @data.value.split ',' else [@data.value.lat, @data.value.lng]
-			location = new google.maps.LatLng parseFloat(location[0]), parseFloat(location[1])
+	if @data.value
+		location = if typeof @data.value == 'string' then @data.value.split ',' else [@data.value.lat, @data.value.lng]
+		location = new google.maps.LatLng parseFloat(location[0]), parseFloat(location[1])
+		@data.setMarker @data.map, location, @data.options.zoom
+		@data.map.setCenter location
+	else
+		@data.map.setCenter new google.maps.LatLng @data.options.defaultLat, @data.options.defaultLng
+		@data.map.setZoom @data.options.zoom
+
+	if @data.atts.searchBox
+		input = @find('.js-search')
+
+		@data.map.controls[google.maps.ControlPosition.TOP_LEFT].push input
+		searchBox = new google.maps.places.SearchBox input
+
+		google.maps.event.addListener searchBox, 'places_changed', =>
+			location = searchBox.getPlaces()[0].geometry.location
+			@data.setMarker @data.map, location
+			@data.map.setCenter location
+
+		$(input).removeClass('af-map-search-box-hidden')
+
+	if @data.atts.autolocate and navigator.geolocation and not @data.value
+		navigator.geolocation.getCurrentPosition (position) =>
+			location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
 			@data.setMarker @data.map, location, @data.options.zoom
 			@data.map.setCenter location
-		else
-			@data.map.setCenter new google.maps.LatLng @data.options.defaultLat, @data.options.defaultLng
-			@data.map.setZoom @data.options.zoom
 
-		if @data.atts.searchBox
-			input = @find('.js-search')
+	if typeof @data.atts.rendered == 'function'
+		@data.atts.rendered @data.map
 
-			@data.map.controls[google.maps.ControlPosition.TOP_LEFT].push input
-			searchBox = new google.maps.places.SearchBox input
-
-			google.maps.event.addListener searchBox, 'places_changed', =>
-				location = searchBox.getPlaces()[0].geometry.location
-				@data.setMarker @data.map, location
-				@data.map.setCenter location
-
-			$(input).removeClass('af-map-search-box-hidden')
-
-		if @data.atts.autolocate and navigator.geolocation and not @data.value
-			navigator.geolocation.getCurrentPosition (position) =>
-				location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
-				@data.setMarker @data.map, location, @data.options.zoom
-				@data.map.setCenter location
-
-		if typeof @data.atts.rendered == 'function'
-			@data.atts.rendered @data.map
-
-		google.maps.event.addListener @data.map, 'click', (e) =>
-			@data.setMarker @data.map, e.latLng
+	google.maps.event.addListener @data.map, 'click', (e) =>
+		@data.setMarker @data.map, e.latLng
 
 	@$('.js-map').closest('form').on 'reset', =>
 		@data.marker and @data.marker.setMap null
 		@data.map.setCenter new google.maps.LatLng @data.options.defaultLat, @data.options.defaultLng
 		@data.map.setZoom 0
+
+Template.afMap.rendered = ->
+	@autorun =>
+		GoogleMaps.loaded() and initTemplateAndGoogleMaps.apply this
 
 Template.afMap.helpers
 	schemaKey: ->

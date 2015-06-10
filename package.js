@@ -25,9 +25,3 @@ Package.onUse(function(api) {
   	'lib/client/autoform-map.coffee'
   ], 'client');
 });
-
-Package.onTest(function(api) {
-  api.use('tinytest');
-  api.use('yogiben:autoform-map');
-  api.addFiles('autoform-map-tests.js');
-});

@@ -80,6 +80,19 @@ Schemas.Cities = new SimpleSchema
 		decimal: true
 ```
 
+Or if you want to save lat and lng as a array, important for GEOJson:
+
+```
+Schemas.Cities = new SimpleSchema
+	location:
+		type: [Number]
+		decimal: true
+		autoform:
+			type: 'map'
+			afFieldInput:
+				# options
+```
+
 ### Options ###
 
 *mapType* type of google map. Possible values: `'roadmap' 'satellite' 'hybrid' 'terrain'`

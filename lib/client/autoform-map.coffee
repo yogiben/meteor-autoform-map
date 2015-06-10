@@ -62,7 +62,7 @@ initTemplateAndGoogleMaps = ->
 	@data.map = new google.maps.Map @find('.js-map'), mapOptions
 
 	if @data.value
-		location = if typeof @data.value == 'string' then @data.value.split ',' else if typeof @data.value == 'Array' then [@data.value.lat, @data.value.lng] else [@data.value[1],@data.value[0]]
+		location = if typeof @data.value == 'string' then @data.value.split ',' else if @data.value.hasOwnProperty 'lat' then [@data.value.lat, @data.value.lng] else [@data.value[1],@data.value[0]]
 		location = new google.maps.LatLng parseFloat(location[0]), parseFloat(location[1])
 		@data.setMarker @data.map, location, @data.options.zoom
 		@data.map.setCenter location

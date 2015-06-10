@@ -13,7 +13,7 @@ AutoForm.addInputType 'map',
 	template: 'afMap'
 	valueOut: ->
 		node = $(@context)
-		
+
 		lat = node.find('.js-lat').val()
 		lng = node.find('.js-lng').val()
 
@@ -98,7 +98,7 @@ initTemplateAndGoogleMaps = ->
 	@$('.js-map').closest('form').on 'reset', =>
 		@data.marker and @data.marker.setMap null
 		@data.map.setCenter new google.maps.LatLng @data.options.defaultLat, @data.options.defaultLng
-		@data.map.setZoom 0
+		@data.map.setZoom @data.options?.zoom or 0
 
 Template.afMap.rendered = ->
 	@autorun =>

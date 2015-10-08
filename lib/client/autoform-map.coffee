@@ -33,7 +33,18 @@ AutoForm.addInputType 'map',
 			[value.lng, value.lat]
 
 Template.afMap.created = ->
+	@mapReady = new ReactiveVar false
 	GoogleMaps.load(libraries: 'places')
+
+	@_stopInterceptValue = false
+	@_interceptValue = (ctx) ->
+		t = Template.instance()
+		if t.mapReady.get() and ctx.value and not t._stopInterceptValue
+			location = if typeof ctx.value == 'string' then ctx.value.split ',' else if ctx.value.hasOwnProperty 'lat' then [ctx.value.lat, ctx.value.lng] else [ctx.value[1], ctx.value[0]]
+			location = new google.maps.LatLng parseFloat(location[0]), parseFloat(location[1])
+			t.data.setMarker t.data.map, location, t.data.options.zoom
+			t.data.map.setCenter location
+			t._stopInterceptValue = true
 
 initTemplateAndGoogleMaps = ->
 	@data.options = _.extend {}, defaults, @data.atts
@@ -100,12 +111,15 @@ initTemplateAndGoogleMaps = ->
 		@data.map.setCenter new google.maps.LatLng @data.options.defaultLat, @data.options.defaultLng
 		@data.map.setZoom @data.options?.zoom or 0
 
+	@mapReady.set true
+
 Template.afMap.rendered = ->
 	@autorun =>
 		GoogleMaps.loaded() and initTemplateAndGoogleMaps.apply this
 
 Template.afMap.helpers
 	schemaKey: ->
+		Template.instance()._interceptValue @
 		@atts['data-schema-key']
 	width: ->
 		if typeof @atts.width == 'string'

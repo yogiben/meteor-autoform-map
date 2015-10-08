@@ -12,11 +12,11 @@ Package.onUse(function(api) {
   	'coffeescript',
   	'templating',
     'reactive-var',
-  	'aldeed:autoform@5.3.0'
+  	'aldeed:autoform@5.6.0'
   ], 'client');
 
   api.imply([
-    'dburles:google-maps@1.1.1'
+    'dburles:google-maps@1.1.5'
   ], 'client');
 
   api.addFiles([

@@ -7,7 +7,7 @@ defaults =
 	geolocation: false
 	searchBox: false
 	autolocate: false
-	zoom: 13
+	zoom: 1
 
 AutoForm.addInputType 'map',
 	template: 'afMap'

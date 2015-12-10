@@ -17,7 +17,7 @@ AutoForm.addInputType 'map',
 		lat = node.find('.js-lat').val()
 		lng = node.find('.js-lng').val()
 
-		if lat.length > 0 and lng.length > 0
+		if lat?.length > 0 and lng?.length > 0
 			lat: lat
 			lng: lng
 	contextAdjust: (ctx) ->

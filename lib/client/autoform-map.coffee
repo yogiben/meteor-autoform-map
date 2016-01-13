@@ -17,7 +17,7 @@ AutoForm.addInputType 'map',
 		lat = node.find('.js-lat').val()
 		lng = node.find('.js-lng').val()
 
-		if lat.length > 0 and lng.length > 0
+		if lat?.length > 0 and lng?.length > 0
 			lat: lat
 			lng: lng
 	contextAdjust: (ctx) ->
@@ -139,10 +139,11 @@ Template.afMap.events
 		unless navigator.geolocation then return false
 
 		@loading.set true
+		t = Template.instance()
 		navigator.geolocation.getCurrentPosition (position) =>
 			location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
-			@setMarker @map, location, @options.zoom
-			@map.setCenter location
+			t.setMarker t.map, location, @options?.zoom
+			t.map.setCenter location
 			@loading.set false
 
 	'keydown .js-search': (e) ->

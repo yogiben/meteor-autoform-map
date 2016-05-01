@@ -93,6 +93,27 @@ Schemas.Cities = new SimpleSchema
 				# options
 ```
 
+Or if you want to save lat, lng and *name* in object:
+
+```
+Schemas.Cities = new SimpleSchema
+	location:
+		type: Object
+		autoform:
+			type: 'map'
+			afFieldInput:
+				# options
+	'location.lat':
+		type: Number
+		decimal: true
+	'location.lng':
+		type: Number
+		decimal: true
+    'location.name':
+    		type: String
+    		decimal: true
+```
+
 ### Options ###
 
 *mapType* type of google map. Possible values: `'roadmap' 'satellite' 'hybrid' 'terrain'`

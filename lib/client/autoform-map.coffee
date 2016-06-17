@@ -113,8 +113,10 @@ Template.afMap.rendered = ->
 	@autorun =>
 		GoogleMaps.loaded() and initTemplateAndGoogleMaps.apply this
 
-	input = @find('.js-search')
-	$(input).val(@data.value?.name)
+	@autorun =>
+		if GoogleMaps.loaded()
+			input = @find('.js-search')
+			$(input).val(@data.value?.name)
 
 Template.afMap.helpers
 	schemaKey: ->

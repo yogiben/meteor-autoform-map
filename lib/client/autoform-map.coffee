@@ -16,10 +16,12 @@ AutoForm.addInputType 'map',
 
 		lat = node.find('.js-lat').val()
 		lng = node.find('.js-lng').val()
+		name = node.find('.js-search').val()
 
 		if lat?.length > 0 and lng?.length > 0
 			lat: lat
 			lng: lng
+			name: name
 	contextAdjust: (ctx) ->
 		ctx.loading = new ReactiveVar(false)
 		ctx
@@ -110,6 +112,11 @@ initTemplateAndGoogleMaps = ->
 Template.afMap.rendered = ->
 	@autorun =>
 		GoogleMaps.loaded() and initTemplateAndGoogleMaps.apply this
+
+	@autorun =>
+		if GoogleMaps.loaded()
+			input = @find('.js-search')
+			$(input).val(@data.value?.name)
 
 Template.afMap.helpers
 	schemaKey: ->

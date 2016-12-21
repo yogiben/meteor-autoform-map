@@ -50,7 +50,7 @@ initTemplateAndGoogleMaps = ->
 	@options = _.extend {}, defaults, @data.atts
 
 	@data.marker = undefined
-	@setMarker = (map, location, zoom=0) =>
+	@setMarker = (map, location, zoom) =>
 		@$('.js-lat').val(location.lat())
 		@$('.js-lng').val(location.lng())
 
@@ -142,7 +142,7 @@ Template.afMap.events
 		t = Template.instance()
 		navigator.geolocation.getCurrentPosition (position) =>
 			location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
-			t.setMarker t.map, location, @options?.zoom
+			t.setMarker t.map, location, t.options.zoom
 			t.map.setCenter location
 			@loading.set false
 

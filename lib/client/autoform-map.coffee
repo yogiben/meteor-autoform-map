@@ -7,7 +7,9 @@ defaults =
 	geolocation: false
 	searchBox: false
 	autolocate: false
-	zoom: 1
+	zoom: 12,
+	key: '',
+	libraries: 'places'
 
 AutoForm.addInputType 'map',
 	template: 'afMap'
@@ -34,7 +36,9 @@ AutoForm.addInputType 'map',
 
 Template.afMap.created = ->
 	@mapReady = new ReactiveVar false
-	GoogleMaps.load(libraries: 'places')
+	@options = _.extend {}, defaults, @data.atts
+
+	GoogleMaps.load(libraries: @options.libraries, key: @options.key)
 
 	@_stopInterceptValue = false
 	@_interceptValue = (ctx) ->
@@ -47,8 +51,6 @@ Template.afMap.created = ->
 			t._stopInterceptValue = true
 
 initTemplateAndGoogleMaps = ->
-	@options = _.extend {}, defaults, @data.atts
-
 	@data.marker = undefined
 	@setMarker = (map, location, zoom) =>
 		@$('.js-lat').val(location.lat())

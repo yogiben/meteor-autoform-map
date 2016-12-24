@@ -1,15 +1,20 @@
 KEY_ENTER = 13
-
 defaults =
 	mapType: 'roadmap'
 	defaultLat: 1
 	defaultLng: 1
 	geolocation: false
 	searchBox: false
-	autolocate: false
-	zoom: 12,
+	autolocate: true
+	zoom: 8,
+	libraries: 'places',
 	key: '',
-	libraries: 'places'
+	language: 'en',
+	direction: 'ltr',
+	geoCoding: false,
+	geoCodingCallBack: null,
+	animateMarker: false
+markers = {}
 
 AutoForm.addInputType 'map',
 	template: 'afMap'
@@ -38,7 +43,8 @@ Template.afMap.created = ->
 	@mapReady = new ReactiveVar false
 	@options = _.extend {}, defaults, @data.atts
 
-	GoogleMaps.load(libraries: @options.libraries, key: @options.key)
+	if typeof google != 'object' || typeof google.maps != 'object'
+		GoogleMaps.load(libraries: @options.libraries, key: @options.key, language: @options.language)
 
 	@_stopInterceptValue = false
 	@_interceptValue = (ctx) ->
@@ -49,20 +55,54 @@ Template.afMap.created = ->
 			t.setMarker t.map, location, t.options.zoom
 			t.map.setCenter location
 			t._stopInterceptValue = true
+			if isNaN(t.data.marker.position.lat())
+				initTemplateAndGoogleMaps.apply t
+	@_getMyLocation = (t) ->
+		unless navigator.geolocation then return false
+
+		t.data.loading.set true
+		navigator.geolocation.getCurrentPosition (position) =>
+			location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
+			t.setMarker t.map, location, t.options.zoom
+			t.map.setCenter location
+			t.data.loading.set false
+	@_getDefaultLocation = (t) ->
+		unless navigator.geolocation then return false
+		
+		t.data.loading.set true
+		location = new google.maps.LatLng t.options.defaultLat, t.options.defaultLng
+		t.map.setCenter location
+		t.setMarker t.map, location, t.options.zoom
+		t.data.loading.set false
 
 initTemplateAndGoogleMaps = ->
 	@data.marker = undefined
-	@setMarker = (map, location, zoom) =>
+	@setMarker = (map, location, zoom=0) =>
 		@$('.js-lat').val(location.lat())
 		@$('.js-lng').val(location.lng())
 
-		if @data.marker then @data.marker.setMap null
-		@data.marker = new google.maps.Marker
-			position: location
-			map: map
+		if @data.marker
+			@data.marker.setPosition location
+			if @data.marker.map != @map
+				@data.marker.setMap(@map)
+		else if markers[@data.name] != undefined
+			@data.marker = markers[@data.name].marker
+			@data.marker.setMap(markers[@data.name].map)
+			@data.marker.setPosition location
+		else
+			markerOpts = 
+				position: location
+				map: @map
+			if @options.animateMarker
+				markerOpts.animation = google.maps.Animation.DROP
+			@data.marker = new google.maps.Marker markerOpts
+			markers[@data.name] = {marker: @data.marker, map: @map}
 
 		if zoom > 0
 			@map.setZoom zoom
+
+		if @geocoder != undefined && @options.geoCodingCallBack != null
+			window[@options.geoCodingCallBack](@, @geocoder, location)
 
 	mapOptions =
 		zoom: 0
@@ -74,27 +114,39 @@ initTemplateAndGoogleMaps = ->
 
 	@map = new google.maps.Map @find('.js-map'), mapOptions
 
-	@map.setCenter new google.maps.LatLng @options.defaultLat, @options.defaultLng
-	@map.setZoom @options.zoom
-
 	if @data.atts.searchBox
 		input = @find('.js-search')
 
-		@map.controls[google.maps.ControlPosition.TOP_LEFT].push input
+		if @options.direction == 'rtl'
+			@map.controls[google.maps.ControlPosition.TOP_RIGHT].push input
+		else
+			@map.controls[google.maps.ControlPosition.TOP_LEFT].push input
 		searchBox = new google.maps.places.SearchBox input
 
 		google.maps.event.addListener searchBox, 'places_changed', =>
 			location = searchBox.getPlaces()[0].geometry.location
-			@setMarker @map, location
+			@setMarker @map, location, @options.zoom
 			@map.setCenter location
 
 		$(input).removeClass('af-map-search-box-hidden')
 
-	if @data.atts.autolocate and navigator.geolocation and not @data.value
+	if @data.atts.geolocation
+		myLocation = @find('.js-locate')
+		myLocation.addEventListener 'click', => @._getMyLocation(@)
+		if @options.direction == 'rtl'
+			@map.controls[google.maps.ControlPosition.TOP_LEFT].push myLocation
+		else
+			@map.controls[google.maps.ControlPosition.TOP_RIGHT].push myLocation
+
+	if @data.atts.autolocate and navigator.geolocation
 		navigator.geolocation.getCurrentPosition (position) =>
 			location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
 			@setMarker @map, location, @options.zoom
 			@map.setCenter location
+			if @options.geoCoding
+				@geocoder = new google.maps.Geocoder
+	else
+		@._getDefaultLocation @
 
 	if typeof @data.atts.rendered == 'function'
 		@data.atts.rendered @map
@@ -103,15 +155,19 @@ initTemplateAndGoogleMaps = ->
 		@setMarker @map, e.latLng
 
 	@$('.js-map').closest('form').on 'reset', =>
-		@data.marker and @data.marker.setMap null
-		@map.setCenter new google.maps.LatLng @options.defaultLat, @options.defaultLng
-		@map.setZoom @options?.zoom or 0
+		if @data.atts.autolocate
+			@._getMyLocation @
+		else
+			@._getDefaultLocation @
 
 	@mapReady.set true
 
-Template.afMap.rendered = ->
+Template.afMap.onRendered ->
 	@autorun =>
 		GoogleMaps.loaded() and initTemplateAndGoogleMaps.apply this
+
+Template.afMap.onDestroyed ->
+	delete markers[@data.name]
 
 Template.afMap.helpers
 	schemaKey: ->
@@ -135,18 +191,9 @@ Template.afMap.helpers
 		@loading.get()
 
 Template.afMap.events
-	'click .js-locate': (e, t) ->
+	'click .js-locate': (e) ->
 		e.preventDefault()
-
-		unless navigator.geolocation then return false
-
-		@loading.set true
-		t = Template.instance()
-		navigator.geolocation.getCurrentPosition (position) =>
-			location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
-			t.setMarker t.map, location, t.options.zoom
-			t.map.setCenter location
-			@loading.set false
 
 	'keydown .js-search': (e) ->
 		if e.keyCode == KEY_ENTER then e.preventDefault()
+

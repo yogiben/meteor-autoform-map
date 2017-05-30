@@ -152,7 +152,7 @@ initTemplateAndGoogleMaps = ->
 		@data.atts.rendered @map
 
 	google.maps.event.addListener @map, 'click', (e) =>
-		@setMarker @map, e.latLng
+		@setMarker @map, e.latLng, @map.zoom
 
 	@$('.js-map').closest('form').on 'reset', =>
 		if @data.atts.autolocate

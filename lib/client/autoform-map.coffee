@@ -64,7 +64,6 @@ Template.afMap.created = ->
 		navigator.geolocation.getCurrentPosition (position) =>
 			location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
 			t.setMarker t.map, location, t.options.zoom
-			t.map.setCenter location
 			t.data.loading.set false
 	@_getDefaultLocation = (t) ->
 		unless navigator.geolocation then return false

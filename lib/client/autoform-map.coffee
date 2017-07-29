@@ -105,7 +105,7 @@ initTemplateAndGoogleMaps = ->
 
 	mapOptions =
 		zoom: 0
-		mapTypeId: google.maps.MapTypeId[@options.mapType]
+		mapTypeId: google.maps.MapTypeId[@options.mapType.toUpperCase()]
 		streetViewControl: false
 
 	if @data.atts.googleMap

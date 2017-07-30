@@ -76,31 +76,71 @@ Template.afMap.created = ->
 
 initTemplateAndGoogleMaps = ->
 	@data.marker = undefined
+
+	@drawCircle = (location) =>
+		@data.marker.circle = new google.maps.Circle({
+			strokeColor: '#FFFFFF',
+			strokeOpacity: 0.8,
+			strokeWeight: 2,
+			fillColor: '#809FB3',
+			fillOpacity: 0.35,
+			map: @map,
+			center: location,
+			radius: 200,
+			editable: true,
+			zIndex: 0
+        })
+		google.maps.event.addListener @data.marker.circle, 'click', (e) =>
+			@setMarker @map, e.latLng, @map.zoom
+
+		google.maps.event.addListener @data.marker.circle, 'radius_changed', (e) =>
+			window[@options.radiusChangedCallback](@, @data.marker.circle.getRadius())
+
 	@setMarker = (map, location, zoom=0) =>
 		@$('.js-lat').val(location.lat())
 		@$('.js-lng').val(location.lng())
 
 		if @data.marker
 			@data.marker.setPosition location
+			if @options.drawCircle
+				if @data.marker.circle?
+					@data.marker.circle.setCenter location
+				else
+					@drawCircle location
 			if @data.marker.map != @map
 				@data.marker.setMap(@map)
 		else if markers[@data.name] != undefined
 			@data.marker = markers[@data.name].marker
 			@data.marker.setMap(markers[@data.name].map)
 			@data.marker.setPosition location
+			if @options.drawCircle
+				if @data.marker.circle?
+					@data.marker.circle.setCenter location
+				else
+					@drawCircle location
 		else
 			markerOpts = 
 				position: location
 				map: @map
 			if @options.animateMarker
 				markerOpts.animation = google.maps.Animation.DROP
+			if @options.customIcon
+				icon = 
+					url: @options.icon.url
+					anchor: new google.maps.Point(@options.icon.point.x, @options.icon.point.y)
+					scaledSize: new google.maps.Size(@options.icon.size.w, @options.icon.size.h)
+				markerOpts.icon = icon
 			@data.marker = new google.maps.Marker markerOpts
+
+			if @options.drawCircle and not isNaN(location.lat())
+				@drawCircle location
+
 			markers[@data.name] = {marker: @data.marker, map: @map}
 
 		if zoom > 0
 			@map.setZoom zoom
 
-		if @geocoder != undefined && @options.geoCodingCallBack != null
+		if @geocoder? and @options.geoCodingCallBack?
 			window[@options.geoCodingCallBack](@, @geocoder, location)
 
 	mapOptions =

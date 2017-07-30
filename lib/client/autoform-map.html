@@ -4,9 +4,9 @@
 		<input type="text" class="js-lng" style="display: none">
 		<input type="text" class="controls js-search" placeholder="{{_ 'MapSearch'}} ">
 		{{#if atts.geolocation}}
-		<a style="margin-bottom:5px;" class="controls btn btn-default js-locate">
-			<i class="fa {{#if loading}}fa-spin fa-circle-o-notch{{else}}fa-crosshairs{{/if}}"></i>
-		</a>
+			<a style="margin-bottom:5px;" class="controls btn btn-default js-locate">
+				<i class="fa {{#if loading}}fa-spin fa-circle-o-notch{{else}}fa-crosshairs{{/if}}"></i>
+			</a>
 		{{/if}}
 		<div class="js-map {{atts.direction}}" style="width:{{width}}; height:{{height}};"></div>
 	</div>

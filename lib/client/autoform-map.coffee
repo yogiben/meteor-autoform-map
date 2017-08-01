@@ -14,7 +14,7 @@ defaults =
 	geoCoding: false,
 	geoCodingCallBack: null,
 	animateMarker: false
-markers = {}
+markers = []
 
 AutoForm.addInputType 'map',
 	template: 'afMap'
@@ -42,6 +42,7 @@ AutoForm.addInputType 'map',
 Template.afMap.created = ->
 	@mapReady = new ReactiveVar false
 	@options = _.extend {}, defaults, @data.atts
+	@data.mktMarkers = []
 
 	if typeof google != 'object' || typeof google.maps != 'object'
 		GoogleMaps.load(libraries: @options.libraries, key: @options.key, language: @options.language)
@@ -77,8 +78,48 @@ Template.afMap.created = ->
 initTemplateAndGoogleMaps = ->
 	@data.marker = undefined
 
-	@drawCircle = (location) =>
-		@data.marker.circle = new google.maps.Circle({
+	@drawStaticMarkers = ->
+		for m, i in @options.staticMarkers
+			sMarker = null
+			
+			if @data.sMarkers? and @data.sMarkers.length > 0
+				sMarker = lookupArray @data.sMarkers, 'placeId', m.location.placeId
+			else
+				@data.sMarkers = []
+
+			if sMarker?
+				if sMarker.map != @map
+					@data.sMarkers[sMarker].setMap @map
+			else
+				sMarkerOpt = 
+					position: m.location.location
+					placeId: m.location.placeId
+					map: @map
+					zIndex: 1
+				if m.animateMarker
+					sMarkerOpt.animation = google.maps.Animation.DROP
+				if m.customIcon
+					icon = 
+						url: m.icon.url
+						anchor: new google.maps.Point(m.icon.point.x, m.icon.point.y)
+						scaledSize: new google.maps.Size(m.icon.size.w, m.icon.size.h)
+					sMarkerOpt.icon = icon
+				mkr = new google.maps.Marker sMarkerOpt
+				sMarker =
+					placeId: m.location.placeId
+					map: @map
+					marker: mkr
+				
+				@data.sMarkers.push(sMarker)
+
+	@drawCircle = (location, radius) =>
+		if not radius?
+			radius = 200
+		if @data.marker.circle?
+			@data.marker.circle.setMap null
+			@data.marker.circle = null
+
+		@data.marker.circle = new google.maps.Circle ({
 			strokeColor: '#FFFFFF',
 			strokeOpacity: 0.8,
 			strokeWeight: 2,
@@ -86,17 +127,22 @@ initTemplateAndGoogleMaps = ->
 			fillOpacity: 0.35,
 			map: @map,
 			center: location,
-			radius: 200,
 			editable: true,
-			zIndex: 0
-        })
+			zIndex: 5,
+			radius: radius
+		})
+
 		google.maps.event.addListener @data.marker.circle, 'click', (e) =>
 			@setMarker @map, e.latLng, @map.zoom
 
 		google.maps.event.addListener @data.marker.circle, 'radius_changed', (e) =>
+			@data.circleRadius = @data.marker.circle.getRadius()
 			window[@options.radiusChangedCallback](@, @data.marker.circle.getRadius())
 
 	@setMarker = (map, location, zoom=0) =>
+		if not @data?
+			return false
+
 		@$('.js-lat').val(location.lat())
 		@$('.js-lng').val(location.lng())
 
@@ -104,24 +150,25 @@ initTemplateAndGoogleMaps = ->
 			@data.marker.setPosition location
 			if @options.drawCircle
 				if @data.marker.circle?
-					@data.marker.circle.setCenter location
+					@drawCircle location, @data.marker.circle.getRadius()
 				else
 					@drawCircle location
 			if @data.marker.map != @map
 				@data.marker.setMap(@map)
-		else if markers[@data.name] != undefined
+		else if markers[@data.name]?
 			@data.marker = markers[@data.name].marker
 			@data.marker.setMap(markers[@data.name].map)
 			@data.marker.setPosition location
 			if @options.drawCircle
 				if @data.marker.circle?
-					@data.marker.circle.setCenter location
+					@drawCircle location, @data.marker.circle.getRadius()
 				else
 					@drawCircle location
 		else
 			markerOpts = 
 				position: location
 				map: @map
+				zIndex: 5
 			if @options.animateMarker
 				markerOpts.animation = google.maps.Animation.DROP
 			if @options.customIcon
@@ -136,6 +183,9 @@ initTemplateAndGoogleMaps = ->
 				@drawCircle location
 
 			markers[@data.name] = {marker: @data.marker, map: @map}
+
+		if @options.staticMarkers?
+			@drawStaticMarkers()
 
 		if zoom > 0
 			@map.setZoom zoom
@@ -207,6 +257,10 @@ Template.afMap.onRendered ->
 
 Template.afMap.onDestroyed ->
 	delete markers[@data.name]
+	mktMarkers = []
+	@data.mktMarkers = null
+	if @options.geoCoding
+		@geocoder = null
 
 Template.afMap.helpers
 	schemaKey: ->
@@ -230,8 +284,9 @@ Template.afMap.helpers
 		@loading.get()
 
 Template.afMap.events
-	'click .js-locate': (e) ->
+	'click .js-locate': (e, t) ->
 		e.preventDefault()
+		t._getMyLocation(t)
 
 	'keydown .js-search': (e) ->
 		if e.keyCode == KEY_ENTER then e.preventDefault()

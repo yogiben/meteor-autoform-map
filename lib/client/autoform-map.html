@@ -1,7 +1,8 @@
 <template name="afMap">
 	<div data-schema-key="{{schemaKey}}" reverse="{{atts.reverse}}" direction="{{atts.direction}}">
-		<input type="text" class="js-lat" style="display: none">
-		<input type="text" class="js-lng" style="display: none">
+		<input type="hidden" class="js-lat">
+		<input type="hidden" class="js-lng">
+
 		<input type="text" class="controls js-search" placeholder="{{_ 'MapSearch'}} ">
 		{{#if atts.geolocation}}
 			<a style="margin-bottom:5px;" class="controls btn btn-default js-locate">

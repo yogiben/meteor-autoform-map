@@ -132,6 +132,9 @@ initTemplateAndGoogleMaps = ->
 			@data.marker.circle.setMap null
 			@data.marker.circle = null
 
+		if not radius?
+			radius = 100
+
 		@data.marker.circle = new google.maps.Circle ({
 			strokeColor: '#FFFFFF',
 			strokeOpacity: 0.8,

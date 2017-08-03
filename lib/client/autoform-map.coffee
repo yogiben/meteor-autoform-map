@@ -296,6 +296,7 @@ Template.afMap.onRendered ->
 		GoogleMaps.loaded() and initTemplateAndGoogleMaps.apply this
 
 Template.afMap.onDestroyed ->
+	@map = null
 	delete markers[@data.name]
 	if @options.geoCoding
 		@geocoder = null

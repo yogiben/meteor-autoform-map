@@ -127,7 +127,7 @@ initTemplateAndGoogleMaps = ->
 
 	@drawCircle = (location, radius) =>
 		if not radius?
-			radius = @data.radius
+			radius = if @data.radius? then @data.radius else @options.radius
 		if @data.marker.circle?
 			@data.marker.circle.setMap null
 			@data.marker.circle = null

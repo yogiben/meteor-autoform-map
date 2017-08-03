@@ -13,7 +13,8 @@ defaults =
 	direction: 'ltr',
 	geoCoding: false,
 	geoCodingCallBack: null,
-	animateMarker: false
+	animateMarker: false,
+	radius: 100
 markers = []
 
 AutoForm.addInputType 'map',

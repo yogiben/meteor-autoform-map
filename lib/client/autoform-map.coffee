@@ -23,10 +23,15 @@ AutoForm.addInputType 'map',
 
 		lat = node.find('.js-lat').val()
 		lng = node.find('.js-lng').val()
+		radius = node.find('.radius').val()
 
+		out = {}
 		if lat?.length > 0 and lng?.length > 0
-			lat: lat
-			lng: lng
+			out.lat = lat
+			out.lng = lng
+		if radius?.length > 0
+			out.radius = radius
+		return out
 	contextAdjust: (ctx) ->
 		ctx.loading = new ReactiveVar(false)
 		ctx
@@ -37,12 +42,14 @@ AutoForm.addInputType 'map',
 			else
 				"#{value.lat},#{value.lng}"
 		numberArray: (value) ->
-			[value.lng, value.lat]
+			if @attr('drawCircle')
+				[value.lng, value.lat, value.radius]
+			else
+				[value.lng, value.lat]
 
 Template.afMap.created = ->
 	@mapReady = new ReactiveVar false
 	@options = _.extend {}, defaults, @data.atts
-	@data.mktMarkers = []
 
 	if typeof google != 'object' || typeof google.maps != 'object'
 		GoogleMaps.load(libraries: @options.libraries, key: @options.key, language: @options.language)
@@ -53,19 +60,23 @@ Template.afMap.created = ->
 		if t.mapReady.get() and ctx.value and not t._stopInterceptValue
 			location = if typeof ctx.value == 'string' then ctx.value.split ',' else if ctx.value.hasOwnProperty 'lat' then [ctx.value.lat, ctx.value.lng] else [ctx.value[1], ctx.value[0]]
 			location = new google.maps.LatLng parseFloat(location[0]), parseFloat(location[1])
+			t.data.radius = if ctx.value.hasOwnProperty 'radius' then ctx.value.radius else 100
 			t.setMarker t.map, location, t.options.zoom
 			t.map.setCenter location
 			t._stopInterceptValue = true
 			if isNaN(t.data.marker.position.lat())
 				initTemplateAndGoogleMaps.apply t
+
 	@_getMyLocation = (t) ->
-		unless navigator.geolocation then return false
+		unless navigator.geolocation and not t.data.loading.get() then return false
 
 		t.data.loading.set true
 		navigator.geolocation.getCurrentPosition (position) =>
 			location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
 			t.setMarker t.map, location, t.options.zoom
+			t.map.setCenter location
 			t.data.loading.set false
+
 	@_getDefaultLocation = (t) ->
 		unless navigator.geolocation then return false
 		
@@ -88,8 +99,9 @@ initTemplateAndGoogleMaps = ->
 				@data.sMarkers = []
 
 			if sMarker?
+				sMarkerIndex = @data.sMarkers.indexOf(sMarker)
 				if sMarker.map != @map
-					@data.sMarkers[sMarker].setMap @map
+					@data.sMarkers[sMarkerIndex].marker.setMap @map
 			else
 				sMarkerOpt = 
 					position: m.location.location
@@ -114,7 +126,7 @@ initTemplateAndGoogleMaps = ->
 
 	@drawCircle = (location, radius) =>
 		if not radius?
-			radius = 200
+			radius = @data.radius
 		if @data.marker.circle?
 			@data.marker.circle.setMap null
 			@data.marker.circle = null
@@ -132,12 +144,35 @@ initTemplateAndGoogleMaps = ->
 			radius: radius
 		})
 
+		if @data.marker?.circle?
+			@$('.radius').val(radius)
+			window[@options.radiusChangedCallback](@, @data.marker.circle.getRadius())
+
 		google.maps.event.addListener @data.marker.circle, 'click', (e) =>
 			@setMarker @map, e.latLng, @map.zoom
 
 		google.maps.event.addListener @data.marker.circle, 'radius_changed', (e) =>
-			@data.circleRadius = @data.marker.circle.getRadius()
+			if not @data.marker?
+				if markers[@data.name]?
+					@data.marker = markers[@data.name].marker
+					@data.marker.setMap(markers[@data.name].map)
+					@data.marker.setPosition location
+				else
+					e.preventDefault()
+					return false
+			@$('.radius').val(Math.round(@data.marker.circle.getRadius()))
 			window[@options.radiusChangedCallback](@, @data.marker.circle.getRadius())
+		
+		google.maps.event.addListener @data.marker.circle, 'center_changed', (e) =>
+			if not @data.marker?
+				if markers[@data.name]?
+					@data.marker = markers[@data.name].marker
+					@data.marker.setMap(markers[@data.name].map)
+					@data.marker.setPosition location
+				else
+					e.preventDefault()
+					return false
+			window[@options.centerChangedCallback](@, @data.marker)
 
 	@setMarker = (map, location, zoom=0) =>
 		if not @data?
@@ -227,13 +262,14 @@ initTemplateAndGoogleMaps = ->
 		else
 			@map.controls[google.maps.ControlPosition.TOP_RIGHT].push myLocation
 
-	if @data.atts.autolocate and navigator.geolocation
-		navigator.geolocation.getCurrentPosition (position) =>
-			location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
-			@setMarker @map, location, @options.zoom
-			@map.setCenter location
-			if @options.geoCoding
-				@geocoder = new google.maps.Geocoder
+	if @options.autolocate and navigator.geolocation
+		if not @data.value
+			navigator.geolocation.getCurrentPosition (position) =>
+				location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
+				@setMarker @map, location, @options.zoom
+				@map.setCenter location
+				if @options.geoCoding
+					@geocoder = new google.maps.Geocoder
 	else
 		@._getDefaultLocation @
 
@@ -244,11 +280,11 @@ initTemplateAndGoogleMaps = ->
 		@setMarker @map, e.latLng, @map.zoom
 
 	@$('.js-map').closest('form').on 'reset', =>
-		if @data.atts.autolocate
+		if @options.autolocate
 			@._getMyLocation @
 		else
 			@._getDefaultLocation @
-
+			
 	@mapReady.set true
 
 Template.afMap.onRendered ->
@@ -257,8 +293,6 @@ Template.afMap.onRendered ->
 
 Template.afMap.onDestroyed ->
 	delete markers[@data.name]
-	mktMarkers = []
-	@data.mktMarkers = null
 	if @options.geoCoding
 		@geocoder = null
 

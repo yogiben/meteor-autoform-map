@@ -3,6 +3,10 @@
 		<input type="hidden" class="js-lat">
 		<input type="hidden" class="js-lng">
 
+		{{#if atts.drawCircle}}
+			<input type="hidden" class="radius">
+		{{/if}}
+
 		<input type="text" class="controls js-search" placeholder="{{_ 'MapSearch'}} ">
 		{{#if atts.geolocation}}
 			<a style="margin-bottom:5px;" class="controls btn btn-default js-locate">

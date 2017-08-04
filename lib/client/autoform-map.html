@@ -1,5 +1,6 @@
 <template name="afMap">
-	<div data-schema-key="{{schemaKey}}" reverse="{{atts.reverse}}" direction="{{atts.direction}}">
+	<div data-schema-key="{{schemaKey}}" reverse="{{atts.reverse}}" 
+		direction="{{atts.direction}}" class="afMap-container location">
 		<input type="hidden" class="js-lat">
 		<input type="hidden" class="js-lng">
 
@@ -14,5 +15,9 @@
 			</a>
 		{{/if}}
 		<div class="js-map {{atts.direction}}" style="width:{{width}}; height:{{height}};"></div>
+	</div>
+
+	<div id="afMap-error" class="animated afMap-error">
+		<p>{{_ "location_error"}}</p>
 	</div>
 </template>

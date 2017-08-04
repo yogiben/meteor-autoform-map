@@ -50,3 +50,17 @@
   right: auto !important;
   left: 0 !important;
 }
+#afMap-error{
+  position: absolute;
+  top: 20%;
+  left: 5%;
+  width: 90%;
+  height: auto;
+  display: none;
+}
+.has-error #afMap-error{
+  display: block;
+}
+.has-error .afMap-container{
+  display: none;
+}

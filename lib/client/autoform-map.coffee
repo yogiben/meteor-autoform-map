@@ -49,6 +49,7 @@ AutoForm.addInputType 'map',
 				[value.lng, value.lat]
 
 Template.afMap.created = ->
+	@locationIsAllowed = new ReactiveVar false
 	@mapReady = new ReactiveVar false
 	@options = _.extend {}, defaults, @data.atts
 
@@ -87,8 +88,18 @@ Template.afMap.created = ->
 		t.setMarker t.map, location, t.options.zoom
 		t.data.loading.set false
 
+displayMapError = (error, t) ->
+	# Using .parents instead of .closest, for custom usage in blaze template
+	$(t.firstNode).parents('.location').addClass('has-error');
+	t.locationIsAllowed.set false
+	console.log
+	setTimeout ->
+		initTemplateAndGoogleMaps.apply t
+	, 3000
+
 initTemplateAndGoogleMaps = ->
 	@data.marker = undefined
+	@locationIsAllowed.set true
 
 	@drawStaticMarkers = ->
 		for m, i in @options.staticMarkers
@@ -269,11 +280,14 @@ initTemplateAndGoogleMaps = ->
 	if @options.autolocate and navigator.geolocation
 		if not @data.value
 			navigator.geolocation.getCurrentPosition (position) =>
+				$(@firstNode).parents('.location').removeClass('has-error');
 				location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
 				@setMarker @map, location, @options.zoom
 				@map.setCenter location
 				if @options.geoCoding
 					@geocoder = new google.maps.Geocoder
+			, (error) =>
+				displayMapError(error, @)
 	else
 		@._getDefaultLocation @
 

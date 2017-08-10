@@ -190,7 +190,7 @@ initTemplateAndGoogleMaps = ->
 			window[@options.centerChangedCallback](@, @data.marker)
 
 	@setMarker = (map, location, zoom=0) =>
-		if not @data?
+		if not @data? or not @map?
 			return false
 
 		@$('.js-lat').val(location.lat())

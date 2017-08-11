@@ -280,12 +280,12 @@ initTemplateAndGoogleMaps = ->
 	if @options.autolocate and navigator.geolocation
 		if not @data.value
 			navigator.geolocation.getCurrentPosition (position) =>
+				if @options.geoCoding
+					@geocoder = new google.maps.Geocoder
 				$(@firstNode).parents('.location').removeClass('has-error');
 				location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
 				@setMarker @map, location, @options.zoom
 				@map.setCenter location
-				if @options.geoCoding
-					@geocoder = new google.maps.Geocoder
 			, (error) =>
 				displayMapError(error, @)
 	else
@@ -298,10 +298,11 @@ initTemplateAndGoogleMaps = ->
 		@setMarker @map, e.latLng, @map.zoom
 
 	@$('.js-map').closest('form').on 'reset', =>
-		if @options.autolocate
-			@._getMyLocation @
-		else
-			@._getDefaultLocation @
+		if @map?
+			if @options.autolocate
+				@._getMyLocation @
+			else
+				@._getDefaultLocation @
 			
 	@mapReady.set true
 

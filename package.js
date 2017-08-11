@@ -1,7 +1,7 @@
 Package.describe({
   name: 'roshdy:autoform-map',
   summary: 'Edit location coordinates with autoForm',
-  version: '2.0.5',
+  version: '2.0.6',
   git: 'https://github.com/Roshdy/meteor-autoform-map'
 });
 

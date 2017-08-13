@@ -25,6 +25,7 @@ AutoForm.addInputType 'map',
 		lat = node.find('.js-lat').val()
 		lng = node.find('.js-lng').val()
 		radius = node.find('.radius').val()
+		poly = node.find('.poly').val()
 
 		out = {}
 		if lat?.length > 0 and lng?.length > 0
@@ -32,21 +33,33 @@ AutoForm.addInputType 'map',
 			out.lng = lng
 		if radius?.length > 0
 			out.radius = radius
-		return out
+		if poly?.length > 0
+			out.poly = poly
+		out
 	contextAdjust: (ctx) ->
 		ctx.loading = new ReactiveVar(false)
 		ctx
 	valueConverters:
 		string: (value) ->
+			retVal = ""
 			if @attr('reverse')
-				"#{value.lng},#{value.lat}"
+				retVal = "#{value.lng},#{value.lat}"
 			else
-				"#{value.lat},#{value.lng}"
-		numberArray: (value) ->
+				retVal = "#{value.lat},#{value.lng}"
+
 			if @attr('drawCircle')
-				[value.lng, value.lat, value.radius]
-			else
-				[value.lng, value.lat]
+				retVal = retVal + ",#{value.radius}"
+			
+			if @attr('poly')
+				retVal = retVal + ",#{value.poly}"
+
+			retVal
+		numberArray: (value) ->
+			retVal = [value.lng, value.lat]
+			if @attr('drawCircle')
+				retVal.push(value.radius)
+
+			retVal
 
 Template.afMap.created = ->
 	@locationIsAllowed = new ReactiveVar false
@@ -116,7 +129,7 @@ initTemplateAndGoogleMaps = ->
 					@data.sMarkers[sMarkerIndex].marker.setMap @map
 			else
 				sMarkerOpt = 
-					position: m.location.location
+					position: {lat: Number(m.location.position.lat), lng: Number(m.location.position.lng)}
 					placeId: m.location.placeId
 					map: @map
 					zIndex: 1
@@ -240,8 +253,33 @@ initTemplateAndGoogleMaps = ->
 		if zoom > 0
 			@map.setZoom zoom
 
-		if @geocoder? and @options.geoCodingCallBack?
-			window[@options.geoCodingCallBack](@, @geocoder, location)
+		if @options.geoCoding
+			if !@geocoder?
+				@geocoder = new google.maps.Geocoder
+
+			if @geocoder? and @options.geoCodingCallBack?
+				window[@options.geoCodingCallBack](@, @geocoder, location)
+
+		# Set polygon default paths if not set
+		if @options.drawPoly
+			curVal = @$('.poly').val()
+			if not @data.value?.poly? and curVal == '' and @data.marker?.position?
+				m = 100
+				coef = m * 0.000008983
+				lat = @data.marker.position.lat()
+				lng = @data.marker.position.lng()
+				# new_lat  = lat + coef;
+				# new_long = lng + coef / Math.cos(lat * 0.018);
+				p1 = {lat: lat + coef, lng: lng + coef / Math.cos(lat * 0.018)}
+				p2 = {lat: lat + coef, lng: lng - coef / Math.cos(lat * 0.018)}
+				p3 = {lat: lat - coef, lng: lng - coef / Math.cos(lat * 0.018)}
+				p4 = {lat: lat - coef, lng: lng + coef / Math.cos(lat * 0.018)}
+				defaultPaths = [p1, p2, p3, p4]
+				@data.polygon.setPaths defaultPaths
+				@data.polyPaths = defaultPaths
+				@$('.poly').val(JSON.stringify(defaultPaths))
+				if @options.polyPathBinding
+					window[@options.polyPathBinding](@)
 
 	mapOptions =
 		zoom: 0
@@ -295,7 +333,10 @@ initTemplateAndGoogleMaps = ->
 		@data.atts.rendered @map
 
 	google.maps.event.addListener @map, 'click', (e) =>
-		@setMarker @map, e.latLng, @map.zoom
+		if @options.customMapClick && @options.customMapClickCallback
+			window[@options.customMapClickCallback](e, @)
+		else
+			@setMarker @map, e.latLng, @map.zoom
 
 	@$('.js-map').closest('form').on 'reset', =>
 		if @map?
@@ -303,7 +344,34 @@ initTemplateAndGoogleMaps = ->
 				@._getMyLocation @
 			else
 				@._getDefaultLocation @
-			
+		
+	if @options.drawPoly
+		@data.polygon = new google.maps.Polygon(@options.polyOptions)
+		google.maps.event.addListener @data.polygon, 'click', (e) =>
+			if @options.customPolyClick && @options.customPolyClickCallback
+				window[@options.customPolyClickCallback](e, @)
+			else
+				@setMarker @map, e.latLng, @map.zoom
+		@data.polygon.setVisible(false)
+		@data.polygon.setMap(@map)
+
+		# Set polygon paths from DB
+		if @data.value.poly?
+			@data.polygon.setPaths JSON.parse(@data.value.poly)
+			@data.polyPaths = JSON.parse(@data.value.poly)
+			@$('.poly').val(@data.value.poly)
+			if @options.polyPathBinding
+				window[@options.polyPathBinding](@)
+
+		@hidePoly = ->
+			@data.polygon.setVisible(false)
+		@showPoly = ->
+			@data.polygon.setVisible(true)
+		@clearPoly = ->
+			@data.polygon.setPaths []
+			@data.polyPaths = []
+			@$('.poly').val('')
+
 	@mapReady.set true
 
 Template.afMap.onRendered ->
@@ -345,3 +413,11 @@ Template.afMap.events
 	'keydown .js-search': (e) ->
 		if e.keyCode == KEY_ENTER then e.preventDefault()
 
+	'click .hidePoly': (e, t) ->
+		t.hidePoly()
+
+	'click .showPoly': (e, t) ->
+		t.showPoly()
+
+	'click .clear-poly': (e, t) ->
+		t.clearPoly()

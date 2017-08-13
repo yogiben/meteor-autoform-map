@@ -8,6 +8,15 @@
 			<input type="hidden" class="radius">
 		{{/if}}
 
+		{{#if atts.drawPoly}}
+			<input type="hidden" class="poly">
+
+			<button type="button" class="hidden hidePoly"></button>
+			<button type="button" class="hidden showPoly"></button>
+
+			<button type="button" class="btn clear-poly">{{_ "remove"}}</button>
+		{{/if}}
+
 		<input type="text" class="controls js-search" placeholder="{{_ 'MapSearch'}} ">
 		{{#if atts.geolocation}}
 			<a style="margin-bottom:5px;" class="controls btn btn-default js-locate">

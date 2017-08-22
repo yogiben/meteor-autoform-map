@@ -246,6 +246,9 @@ initTemplateAndGoogleMaps = ->
 				@drawCircle location
 
 			markers[@data.name] = {marker: @data.marker, map: @map}
+		
+		# Fix: triggering resize to avoid pre-loaded map different size
+		google.maps.event.trigger(@map, 'resize')
 
 		if @options.staticMarkers?
 			@drawStaticMarkers()
@@ -316,7 +319,7 @@ initTemplateAndGoogleMaps = ->
 			@map.controls[google.maps.ControlPosition.TOP_RIGHT].push myLocation
 
 	if @options.autolocate and navigator.geolocation
-		if not @data.value
+		if not @data.value and @map?
 			navigator.geolocation.getCurrentPosition (position) =>
 				if @options.geoCoding
 					@geocoder = new google.maps.Geocoder

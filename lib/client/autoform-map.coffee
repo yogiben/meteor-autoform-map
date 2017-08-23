@@ -83,7 +83,7 @@ Template.afMap.created = ->
 				initTemplateAndGoogleMaps.apply t
 
 	@_getMyLocation = (t) ->
-		unless t.map and navigator.geolocation and not t.data.loading.get() then return false
+		unless t.map? and navigator.geolocation and not t.data.loading.get() then return false
 
 		t.data.loading.set true
 		navigator.geolocation.getCurrentPosition (position) =>
@@ -93,7 +93,7 @@ Template.afMap.created = ->
 			t.data.loading.set false
 
 	@_getDefaultLocation = (t) ->
-		unless t.map and navigator.geolocation then return false
+		unless t.map? and navigator.geolocation then return false
 		
 		t.data.loading.set true
 		location = new google.maps.LatLng t.options.defaultLat, t.options.defaultLng

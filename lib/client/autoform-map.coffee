@@ -333,6 +333,8 @@ initTemplateAndGoogleMaps = ->
 	if @options.autolocate and navigator.geolocation
 		if not @data.value and @map?
 			navigator.geolocation.getCurrentPosition (position) =>
+				unless @map? then return false
+				
 				if @options.geoCoding
 					@geocoder = new google.maps.Geocoder
 				$(@firstNode).parents('.location').removeClass('has-error');

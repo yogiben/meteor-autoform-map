@@ -305,6 +305,7 @@ initTemplateAndGoogleMaps = ->
 		_.extend mapOptions, @options.googleMap
 
 	@map = new google.maps.Map @find('.js-map'), mapOptions
+	@mapTypeId = mapOptions.mapTypeId
 
 	if @options.searchBox
 		input = @find('.js-search')
@@ -427,6 +428,8 @@ Template.afMap.helpers
 			'200px'
 	loading: ->
 		@loading.get()
+	mapType: ->
+		if @map? then @options.mapTypeId
 
 Template.afMap.events
 	'click .js-locate': (e, t) ->
@@ -444,3 +447,10 @@ Template.afMap.events
 
 	'click .clear-poly': (e, t) ->
 		t.clearPoly()
+	'click .map-type-control': (e, t) ->
+		if t.mapTypeId == 'hybrid' 
+			t.map.setMapTypeId('roadmap') 
+			t.mapTypeId = 'roadmap'
+		else 
+			t.map.setMapTypeId('hybrid')
+			t.mapTypeId = 'hybrid'

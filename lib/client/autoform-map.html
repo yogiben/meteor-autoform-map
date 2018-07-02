@@ -24,6 +24,13 @@
 			</a>
 		{{/if}}
 		<div class="js-map {{atts.direction}}" style="width:{{width}}; height:{{height}};"></div>
+		<button type="button" class="btn sk-btn map-type-control">
+			{{#if $eq mapType 'hybrid'}}
+				<i class="fa fa-road"></i>
+			{{else}}
+				<i class="fa fa-globe"></i>
+			{{/if}}
+		</button>
 	</div>
 
 	<div id="afMap-error" class="animated afMap-error">

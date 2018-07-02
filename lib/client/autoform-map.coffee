@@ -288,7 +288,7 @@ initTemplateAndGoogleMaps = ->
 				p3 = {lat: lat - coef, lng: lng - coef / Math.cos(lat * 0.018)}
 				p4 = {lat: lat - coef, lng: lng + coef / Math.cos(lat * 0.018)}
 				defaultPaths = [p1, p2, p3, p4]
-				@data.polygon.setPaths defaultPaths
+				@data.polygon?.setPaths defaultPaths
 				@data.polyPaths = defaultPaths
 				@$('.poly').val(JSON.stringify(defaultPaths))
 				if @options.polyPathBinding
@@ -376,23 +376,23 @@ initTemplateAndGoogleMaps = ->
 				@map.setOptions({gestureHandling: 'none', draggable: false})
 			google.maps.event.addListener @data.polygon, 'mouseup', (e) =>
 				@map.setOptions({gestureHandling: 'auto', draggable: true})
-		@data.polygon.setVisible(false)
-		@data.polygon.setMap(@map)
+		@data.polygon?.setVisible(false)
+		@data.polygon?.setMap(@map)
 
 		# Set polygon paths from DB
 		if @data.value.poly?
-			@data.polygon.setPaths JSON.parse(@data.value.poly)
+			@data.polygon?.setPaths JSON.parse(@data.value.poly)
 			@data.polyPaths = JSON.parse(@data.value.poly)
 			@$('.poly').val(@data.value.poly)
 			if @options.polyPathBinding
 				window[@options.polyPathBinding](@)
 
 		@hidePoly = ->
-			@data.polygon.setVisible(false)
+			@data.polygon?.setVisible(false)
 		@showPoly = ->
-			@data.polygon.setVisible(true)
+			@data.polygon?.setVisible(true)
 		@clearPoly = ->
-			@data.polygon.setPaths []
+			@data.polygon?.setPaths []
 			@data.polyPaths = []
 			@$('.poly').val('')
 
@@ -443,10 +443,11 @@ Template.afMap.events
 		t.hidePoly()
 
 	'click .showPoly': (e, t) ->
-		t.showPoly()
+		t.showPoly?()
 
 	'click .clear-poly': (e, t) ->
 		t.clearPoly()
+
 	'click .map-type-control': (e, t) ->
 		if t.mapTypeId == 'hybrid' 
 			t.map.setMapTypeId('roadmap') 

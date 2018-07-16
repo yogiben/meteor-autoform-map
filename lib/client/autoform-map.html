@@ -1,13 +1,39 @@
 <template name="afMap">
-	<div data-schema-key="{{schemaKey}}" reverse="{{atts.reverse}}">
-		<input type="text" class="js-lat" style="display: none">
-		<input type="text" class="js-lng" style="display: none">
-		<input type="text" class="controls af-map-search-box js-search af-map-search-box-hidden">
-		{{#if atts.geolocation}}
-		<a style="margin-bottom:5px;" class="btn btn-default js-locate">
-			<i class="fa {{#if loading}}fa-spin fa-circle-o-notch{{else}}fa-map-marker{{/if}}"></i> My location
-		</a>
+	<div data-schema-key="{{schemaKey}}" reverse="{{atts.reverse}}" 
+		direction="{{atts.direction}}" class="afMap-container location">
+		<input type="hidden" class="js-lat">
+		<input type="hidden" class="js-lng">
+
+		{{#if atts.drawCircle}}
+			<input type="hidden" class="radius">
 		{{/if}}
-		<div class="js-map" style="width:{{width}}; height:{{height}};"></div>
+
+		{{#if atts.drawPoly}}
+			<input type="hidden" class="poly">
+
+			<button type="button" class="hidden hidePoly"></button>
+			<button type="button" class="hidden showPoly"></button>
+
+			<button type="button" class="btn clear-poly">{{_ "remove"}}</button>
+		{{/if}}
+
+		<input type="text" class="controls js-search" placeholder="{{_ 'MapSearch'}} ">
+		{{#if atts.geolocation}}
+			<a style="margin-bottom:5px;" class="controls btn btn-default js-locate">
+				<i class="fa {{#if loading}}fa-spin fa-circle-o-notch{{else}}fa-crosshairs{{/if}}"></i>
+			</a>
+		{{/if}}
+		<div class="js-map {{atts.direction}}" style="width:{{width}}; height:{{height}};"></div>
+		<button type="button" class="btn sk-btn map-type-control">
+			{{#if $eq mapType 'hybrid'}}
+				<i class="fa fa-road"></i>
+			{{else}}
+				<i class="fa fa-globe"></i>
+			{{/if}}
+		</button>
+	</div>
+
+	<div id="afMap-error" class="animated afMap-error">
+		<p>{{_ "location_error"}}</p>
 	</div>
 </template>

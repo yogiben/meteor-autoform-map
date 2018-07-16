@@ -1,13 +1,21 @@
 KEY_ENTER = 13
-
 defaults =
 	mapType: 'roadmap'
 	defaultLat: 1
 	defaultLng: 1
 	geolocation: false
 	searchBox: false
-	autolocate: false
-	zoom: 1
+	autolocate: true
+	zoom: 8,
+	libraries: 'places',
+	key: '',
+	language: 'en',
+	direction: 'ltr',
+	geoCoding: false,
+	geoCodingCallBack: null,
+	animateMarker: false,
+	radius: 100
+markers = []
 
 AutoForm.addInputType 'map',
 	template: 'afMap'
@@ -16,25 +24,51 @@ AutoForm.addInputType 'map',
 
 		lat = node.find('.js-lat').val()
 		lng = node.find('.js-lng').val()
+		if @attr('saveRadius')
+			radius = node.find('.radius').val()
+		poly = node.find('.poly').val()
 
+		out = {}
 		if lat?.length > 0 and lng?.length > 0
-			lat: lat
-			lng: lng
+			out.lat = lat
+			out.lng = lng
+		if radius?.length > 0
+			out.radius = radius
+		if poly?.length > 0
+			out.poly = poly
+		out
 	contextAdjust: (ctx) ->
 		ctx.loading = new ReactiveVar(false)
 		ctx
 	valueConverters:
 		string: (value) ->
+			retVal = ""
 			if @attr('reverse')
-				"#{value.lng},#{value.lat}"
+				retVal = "#{value.lng},#{value.lat}"
 			else
-				"#{value.lat},#{value.lng}"
+				retVal = "#{value.lat},#{value.lng}"
+
+			if @attr('drawCircle') and @attr('saveRadius')
+				retVal = retVal + ",#{value.radius}"
+			
+			if @attr('poly')
+				retVal = retVal + ",#{value.poly}"
+
+			retVal
 		numberArray: (value) ->
-			[value.lng, value.lat]
+			retVal = [value.lng, value.lat]
+			if @attr('drawCircle') and @attr('saveRadius')
+				retVal.push(value.radius)
+
+			retVal
 
 Template.afMap.created = ->
+	@locationIsAllowed = new ReactiveVar false
 	@mapReady = new ReactiveVar false
-	GoogleMaps.load(libraries: 'places')
+	@options = _.extend {}, defaults, @data.atts
+
+	if typeof google != 'object' || typeof google.maps != 'object'
+		GoogleMaps.load(libraries: @options.libraries, key: @options.key, language: @options.language)
 
 	@_stopInterceptValue = false
 	@_interceptValue = (ctx) ->
@@ -42,74 +76,337 @@ Template.afMap.created = ->
 		if t.mapReady.get() and ctx.value and not t._stopInterceptValue
 			location = if typeof ctx.value == 'string' then ctx.value.split ',' else if ctx.value.hasOwnProperty 'lat' then [ctx.value.lat, ctx.value.lng] else [ctx.value[1], ctx.value[0]]
 			location = new google.maps.LatLng parseFloat(location[0]), parseFloat(location[1])
+			t.data.radius = if ctx.value.hasOwnProperty 'radius' then ctx.value.radius else 200
 			t.setMarker t.map, location, t.options.zoom
 			t.map.setCenter location
 			t._stopInterceptValue = true
+			if isNaN(t.data.marker.position.lat())
+				initTemplateAndGoogleMaps.apply t
+
+	@_getMyLocation = (t) ->
+		unless t.map? and navigator.geolocation and not t.data.loading.get() then return false
+
+		t.data.loading.set true
+		navigator.geolocation.getCurrentPosition (position) =>
+			unless t.map? then return false
+			location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
+			t.setMarker t.map, location, t.options.zoom
+			t.map.setCenter location
+			t.data.loading.set false
+
+	@_getDefaultLocation = (t) ->
+		unless t.map? and navigator.geolocation then return false
+		
+		t.data.loading.set true
+		location = new google.maps.LatLng t.options.defaultLat, t.options.defaultLng
+		t.map.setCenter location
+		t.setMarker t.map, location, t.options.zoom
+		t.data.loading.set false
+
+displayMapError = (error, t) ->
+	# Using .parents instead of .closest, for custom usage in blaze template
+	$(t.firstNode).parents('.location').addClass('has-error');
+	t.locationIsAllowed.set false
+	console.log
+	setTimeout ->
+		initTemplateAndGoogleMaps.apply t
+	, 3000
 
 initTemplateAndGoogleMaps = ->
-	@options = _.extend {}, defaults, @data.atts
-
 	@data.marker = undefined
+	@locationIsAllowed.set true
+
+	@drawStaticMarkers = ->
+		for m, i in @options.staticMarkers
+			sMarker = null
+			
+			if @data.sMarkers? and @data.sMarkers.length > 0
+				sMarker = lookupArray @data.sMarkers, 'placeId', m.location.placeId
+			else
+				@data.sMarkers = []
+
+			if sMarker?
+				sMarkerIndex = @data.sMarkers.indexOf(sMarker)
+				if sMarker.map != @map
+					@data.sMarkers[sMarkerIndex].marker.setMap @map
+			else
+				sMarkerOpt = 
+					position: {lat: Number(m.location.position.lat), lng: Number(m.location.position.lng)}
+					placeId: m.location.placeId
+					map: @map
+					zIndex: 1
+				if m.animateMarker
+					sMarkerOpt.animation = google.maps.Animation.DROP
+				if m.customIcon
+					icon = 
+						url: m.icon.url
+						anchor: new google.maps.Point(m.icon.point.x, m.icon.point.y)
+						scaledSize: new google.maps.Size(m.icon.size.w, m.icon.size.h)
+					sMarkerOpt.icon = icon
+				mkr = new google.maps.Marker sMarkerOpt
+				sMarker =
+					placeId: m.location.placeId
+					map: @map
+					marker: mkr
+				
+				@data.sMarkers.push(sMarker)
+
+	@drawCircle = (location, radius) =>
+		if not radius?
+			radius = if @data.radius? then @data.radius else @options.circleOptions.radius
+		if @data.marker.circle?
+			@data.marker.circle.setMap null
+			@data.marker.circle = null
+
+		if not radius?
+			radius = 100
+
+		circleOptions =
+			map: @map,
+			center: location
+			strokeColor: '#FFFFFF'
+			strokeOpacity: 0.8
+			strokeWeight: 2
+			fillColor: '#809FB3'
+			fillOpacity: 0.35
+
+		if @options.circleOptions?
+			_.extend circleOptions, @options.circleOptions
+
+		@data.marker.circle = new google.maps.Circle circleOptions
+
+		if @data.marker?.circle?
+			if @options.saveRadius
+				@$('.radius').val(radius)
+				if @options.radiusChangedCallback
+					window[@options.radiusChangedCallback](@, @data.marker.circle.getRadius())
+
+		google.maps.event.addListener @data.marker.circle, 'click', (e) =>
+			if @options.customCircleClickCallback
+				window[@options.customCircleClickCallback](e, @)
+			else
+				@setMarker @map, e.latLng, @map.zoom
+
+		if @options.saveRadius
+			google.maps.event.addListener @data.marker.circle, 'radius_changed', (e) =>
+				if not @data.marker?
+					if markers[@data.name]?
+						@data.marker = markers[@data.name].marker
+						@data.marker.setMap(markers[@data.name].map)
+						@data.marker.setPosition location
+					else
+						e.preventDefault()
+						return false
+				@$('.radius').val(Math.round(@data.marker.circle.getRadius()))
+				window[@options.radiusChangedCallback](@, @data.marker.circle.getRadius())
+		
+		google.maps.event.addListener @data.marker.circle, 'center_changed', (e) =>
+			if @options.centerChangedCallback
+				if not @data.marker?
+					if markers[@data.name]?
+						@data.marker = markers[@data.name].marker
+						@data.marker.setMap(markers[@data.name].map)
+						@data.marker.setPosition location
+					else
+						e.preventDefault()
+						return false
+				window[@options.centerChangedCallback](@, @data.marker)
+
 	@setMarker = (map, location, zoom=0) =>
+		if not @data? or not @map?
+			return false
+
 		@$('.js-lat').val(location.lat())
 		@$('.js-lng').val(location.lng())
 
-		if @data.marker then @data.marker.setMap null
-		@data.marker = new google.maps.Marker
-			position: location
-			map: map
+		if @data.marker
+			@data.marker.setPosition location
+			if @options.drawCircle
+				if @data.marker.circle?
+					@drawCircle location, @data.marker.circle.getRadius()
+				else
+					@drawCircle location
+			if @data.marker.map != @map
+				@data.marker.setMap(@map)
+		else if markers[@data.name]?
+			@data.marker = markers[@data.name].marker
+			@data.marker.setMap(markers[@data.name].map)
+			@data.marker.setPosition location
+			if @options.drawCircle
+				if @data.marker.circle?
+					@drawCircle location, @data.marker.circle.getRadius()
+				else
+					@drawCircle location
+		else
+			markerOpts = 
+				position: location
+				map: @map
+				zIndex: 5
+			if @options.animateMarker
+				markerOpts.animation = google.maps.Animation.DROP
+			if @options.customIcon
+				icon = 
+					url: @options.icon.url
+					anchor: new google.maps.Point(@options.icon.point.x, @options.icon.point.y)
+					scaledSize: new google.maps.Size(@options.icon.size.w, @options.icon.size.h)
+				markerOpts.icon = icon
+			@data.marker = new google.maps.Marker markerOpts
+
+			if @options.drawCircle and not isNaN(location.lat())
+				@drawCircle location
+
+			markers[@data.name] = {marker: @data.marker, map: @map}
+		
+		# Fix: triggering resize to avoid pre-loaded map different size
+		google.maps.event.trigger(@map, 'resize')
+
+		if @options.staticMarkers?
+			@drawStaticMarkers()
 
 		if zoom > 0
 			@map.setZoom zoom
 
+		if @options.geoCoding
+			if !@geocoder?
+				@geocoder = new google.maps.Geocoder
+
+			if @geocoder? and @options.geoCodingCallBack?
+				window[@options.geoCodingCallBack](@, @geocoder, location)
+
+		# Set polygon default paths if not set
+		if @options.drawPoly
+			curVal = @$('.poly').val()
+			if not @data.value?.poly? and curVal == '' and @data.marker?.position?
+				m = 100
+				coef = m * 0.000008983
+				lat = @data.marker.position.lat()
+				lng = @data.marker.position.lng()
+				# new_lat  = lat + coef;
+				# new_long = lng + coef / Math.cos(lat * 0.018);
+				p1 = {lat: lat + coef, lng: lng + coef / Math.cos(lat * 0.018)}
+				p2 = {lat: lat + coef, lng: lng - coef / Math.cos(lat * 0.018)}
+				p3 = {lat: lat - coef, lng: lng - coef / Math.cos(lat * 0.018)}
+				p4 = {lat: lat - coef, lng: lng + coef / Math.cos(lat * 0.018)}
+				defaultPaths = [p1, p2, p3, p4]
+				@data.polygon?.setPaths defaultPaths
+				@data.polyPaths = defaultPaths
+				@$('.poly').val(JSON.stringify(defaultPaths))
+				if @options.polyPathBinding
+					window[@options.polyPathBinding](@)
+
+		if @options.customMarkerSetCallback
+			window[@options.customMarkerSetCallback](@)
 	mapOptions =
 		zoom: 0
-		mapTypeId: google.maps.MapTypeId[@options.mapType]
+		mapTypeId: google.maps.MapTypeId[@options.mapType.toUpperCase()]
 		streetViewControl: false
 
-	if @data.atts.googleMap
-		_.extend mapOptions, @data.atts.googleMap
+	if @options.googleMap
+		_.extend mapOptions, @options.googleMap
 
 	@map = new google.maps.Map @find('.js-map'), mapOptions
+	@mapTypeId = mapOptions.mapTypeId
 
-	@map.setCenter new google.maps.LatLng @options.defaultLat, @options.defaultLng
-	@map.setZoom @options.zoom
-
-	if @data.atts.searchBox
+	if @options.searchBox
 		input = @find('.js-search')
 
-		@map.controls[google.maps.ControlPosition.TOP_LEFT].push input
+		if @options.direction == 'rtl'
+			@map.controls[google.maps.ControlPosition.TOP_RIGHT].push input
+		else
+			@map.controls[google.maps.ControlPosition.TOP_LEFT].push input
 		searchBox = new google.maps.places.SearchBox input
 
 		google.maps.event.addListener searchBox, 'places_changed', =>
 			location = searchBox.getPlaces()[0].geometry.location
-			@setMarker @map, location
+			@setMarker @map, location, @options.zoom
 			@map.setCenter location
 
 		$(input).removeClass('af-map-search-box-hidden')
 
-	if @data.atts.autolocate and navigator.geolocation and not @data.value
-		navigator.geolocation.getCurrentPosition (position) =>
-			location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
-			@setMarker @map, location, @options.zoom
-			@map.setCenter location
+	if @options.geolocation
+		myLocation = @find('.js-locate')
+		myLocation.addEventListener 'click', => @._getMyLocation(@)
+		if @options.direction == 'rtl'
+			@map.controls[google.maps.ControlPosition.TOP_LEFT].push myLocation
+		else
+			@map.controls[google.maps.ControlPosition.TOP_RIGHT].push myLocation
 
-	if typeof @data.atts.rendered == 'function'
-		@data.atts.rendered @map
+	if @options.autolocate and navigator.geolocation
+		if not @data.value and @map?
+			navigator.geolocation.getCurrentPosition (position) =>
+				unless @map? then return false
+				
+				if @options.geoCoding
+					@geocoder = new google.maps.Geocoder
+				$(@firstNode).parents('.location').removeClass('has-error');
+				location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
+				@setMarker @map, location, @options.zoom
+				@map.setCenter location
+			, (error) =>
+				displayMapError(error, @)
+	else
+		@._getDefaultLocation @
+
+	if typeof @options.rendered == 'function'
+		@options.rendered @map
 
 	google.maps.event.addListener @map, 'click', (e) =>
-		@setMarker @map, e.latLng
+		if @options.customMapClickCallback
+			window[@options.customMapClickCallback](e, @)
+		else
+			@setMarker @map, e.latLng, @map.zoom
 
 	@$('.js-map').closest('form').on 'reset', =>
-		@data.marker and @data.marker.setMap null
-		@map.setCenter new google.maps.LatLng @options.defaultLat, @options.defaultLng
-		@map.setZoom @options?.zoom or 0
+		if @map?
+			if @options.autolocate
+				@._getMyLocation @
+			else
+				@._getDefaultLocation @
+		
+	if @options.drawPoly
+		@data.polygon = new google.maps.Polygon(@options.polyOptions)
+		google.maps.event.addListener @data.polygon, 'click', (e) =>
+			if @options.customPolyClickCallback
+				window[@options.customPolyClickCallback](e, @)
+			else
+				@setMarker @map, e.latLng, @map.zoom
+		# FIX: stop dragging map while editing polygon
+		if @options.disablePolyMapGestures
+			google.maps.event.addListener @data.polygon, 'mousedown', (e) =>
+				@map.setOptions({gestureHandling: 'none', draggable: false})
+			google.maps.event.addListener @data.polygon, 'mouseup', (e) =>
+				@map.setOptions({gestureHandling: 'auto', draggable: true})
+		@data.polygon?.setVisible(false)
+		@data.polygon?.setMap(@map)
+
+		# Set polygon paths from DB
+		if @data.value.poly?
+			@data.polygon?.setPaths JSON.parse(@data.value.poly)
+			@data.polyPaths = JSON.parse(@data.value.poly)
+			@$('.poly').val(@data.value.poly)
+			if @options.polyPathBinding
+				window[@options.polyPathBinding](@)
+
+		@hidePoly = ->
+			@data.polygon?.setVisible(false)
+		@showPoly = ->
+			@data.polygon?.setVisible(true)
+		@clearPoly = ->
+			@data.polygon?.setPaths []
+			@data.polyPaths = []
+			@$('.poly').val('')
 
 	@mapReady.set true
 
-Template.afMap.rendered = ->
+Template.afMap.onRendered ->
 	@autorun =>
 		GoogleMaps.loaded() and initTemplateAndGoogleMaps.apply this
+
+Template.afMap.onDestroyed ->
+	@map = null
+	delete markers[@data.name]
+	if @options.geoCoding
+		@geocoder = null
 
 Template.afMap.helpers
 	schemaKey: ->
@@ -131,20 +428,30 @@ Template.afMap.helpers
 			'200px'
 	loading: ->
 		@loading.get()
+	mapType: ->
+		if @map? then @options.mapTypeId
 
 Template.afMap.events
 	'click .js-locate': (e, t) ->
 		e.preventDefault()
-
-		unless navigator.geolocation then return false
-
-		@loading.set true
-		t = Template.instance()
-		navigator.geolocation.getCurrentPosition (position) =>
-			location = new google.maps.LatLng position.coords.latitude, position.coords.longitude
-			t.setMarker t.map, location, @options?.zoom
-			t.map.setCenter location
-			@loading.set false
+		t._getMyLocation(t)
 
 	'keydown .js-search': (e) ->
 		if e.keyCode == KEY_ENTER then e.preventDefault()
+
+	'click .hidePoly': (e, t) ->
+		t.hidePoly()
+
+	'click .showPoly': (e, t) ->
+		t.showPoly?()
+
+	'click .clear-poly': (e, t) ->
+		t.clearPoly()
+
+	'click .map-type-control': (e, t) ->
+		if t.mapTypeId == 'hybrid' 
+			t.map.setMapTypeId('roadmap') 
+			t.mapTypeId = 'roadmap'
+		else 
+			t.map.setMapTypeId('hybrid')
+			t.mapTypeId = 'hybrid'
